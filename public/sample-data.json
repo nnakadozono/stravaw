@@ -1,0 +1,77 @@
+{
+  "generatedAt": "2026-05-18T00:00:00Z",
+  "days": {
+    "2026-04-28": {
+      "run": { "seconds": 1800, "distanceMeters": 5200 },
+      "swim": { "seconds": 0, "distanceMeters": 0 },
+      "bike": { "seconds": 0, "distanceMeters": 0 },
+      "other": { "seconds": 0, "distanceMeters": 0 }
+    },
+    "2026-04-29": {
+      "run": { "seconds": 0, "distanceMeters": 0 },
+      "swim": { "seconds": 2100, "distanceMeters": 1500 },
+      "bike": { "seconds": 5400, "distanceMeters": 42000 },
+      "other": { "seconds": 0, "distanceMeters": 0 }
+    },
+    "2026-05-01": {
+      "run": { "seconds": 2400, "distanceMeters": 7800 },
+      "swim": { "seconds": 0, "distanceMeters": 0 },
+      "bike": { "seconds": 0, "distanceMeters": 0 },
+      "other": { "seconds": 900, "distanceMeters": 0 }
+    },
+    "2026-05-03": {
+      "run": { "seconds": 0, "distanceMeters": 0 },
+      "swim": { "seconds": 1800, "distanceMeters": 1200 },
+      "bike": { "seconds": 7200, "distanceMeters": 65000 },
+      "other": { "seconds": 0, "distanceMeters": 0 }
+    },
+    "2026-05-05": {
+      "run": { "seconds": 3000, "distanceMeters": 10000 },
+      "swim": { "seconds": 1500, "distanceMeters": 1000 },
+      "bike": { "seconds": 3600, "distanceMeters": 30000 },
+      "other": { "seconds": 1200, "distanceMeters": 0 }
+    },
+    "2026-05-08": {
+      "run": { "seconds": 0, "distanceMeters": 0 },
+      "swim": { "seconds": 0, "distanceMeters": 0 },
+      "bike": { "seconds": 4800, "distanceMeters": 38000 },
+      "other": { "seconds": 0, "distanceMeters": 0 }
+    },
+    "2026-05-10": {
+      "run": { "seconds": 2700, "distanceMeters": 8500 },
+      "swim": { "seconds": 1600, "distanceMeters": 1300 },
+      "bike": { "seconds": 0, "distanceMeters": 0 },
+      "other": { "seconds": 0, "distanceMeters": 0 }
+    },
+    "2026-05-12": {
+      "run": { "seconds": 0, "distanceMeters": 0 },
+      "swim": { "seconds": 0, "distanceMeters": 0 },
+      "bike": { "seconds": 0, "distanceMeters": 0 },
+      "other": { "seconds": 2700, "distanceMeters": 3500 }
+    },
+    "2026-05-15": {
+      "run": { "seconds": 3600, "distanceMeters": 12000 },
+      "swim": { "seconds": 0, "distanceMeters": 0 },
+      "bike": { "seconds": 8100, "distanceMeters": 76000 },
+      "other": { "seconds": 0, "distanceMeters": 0 }
+    },
+    "2026-05-18": {
+      "run": { "seconds": 2700, "distanceMeters": 9000 },
+      "swim": { "seconds": 1800, "distanceMeters": 1500 },
+      "bike": { "seconds": 5400, "distanceMeters": 47000 },
+      "other": { "seconds": 0, "distanceMeters": 0 }
+    }
+  },
+  "months": {
+    "2026-04": {
+      "run": { "distanceMeters": 5200 },
+      "swim": { "distanceMeters": 1500 },
+      "bike": { "distanceMeters": 42000 }
+    },
+    "2026-05": {
+      "run": { "distanceMeters": 57300 },
+      "swim": { "distanceMeters": 6000 },
+      "bike": { "distanceMeters": 256000 }
+    }
+  }
+}

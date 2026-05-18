@@ -30,7 +30,7 @@ STRAVA_CODE=the-code-from-the-url npm run auth:exchange
 npm run dev
 ```
 
-The app reads `public/data.json`.
+The app reads `public/data.json`. If it is missing, it falls back to `public/sample-data.json`.
 
 ## Sync Strava data
 

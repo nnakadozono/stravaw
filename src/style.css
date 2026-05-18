@@ -37,7 +37,7 @@ button {
   display: flex;
   align-items: end;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   margin-bottom: 18px;
 }
 
@@ -49,9 +49,10 @@ button {
 
 h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: 26px;
   line-height: 1.08;
   letter-spacing: 0;
+  white-space: nowrap;
 }
 
 .updated {
@@ -63,7 +64,7 @@ h1 {
 
 .kpi {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 18px;
 }
@@ -76,15 +77,21 @@ h1 {
 }
 
 .kpi-label {
-  color: #b6c3bb;
-  font-size: 11px;
+  color: rgba(182, 195, 187, 0.68);
+  font-size: 10px;
+  line-height: 1;
   text-transform: uppercase;
 }
 
 .kpi-value {
-  margin-top: 4px;
-  font-size: 18px;
+  margin-top: 6px;
+  font-size: 16px;
   font-weight: 700;
+  line-height: 1.1;
+}
+
+.kpi-month {
+  padding: 10px;
 }
 
 .calendar {
@@ -92,10 +99,40 @@ h1 {
   gap: 8px;
 }
 
+.calendar-header,
 .week {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: 34px repeat(7, minmax(0, 1fr));
   gap: 6px;
+}
+
+.calendar-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  align-items: center;
+  padding: 4px 0;
+  background: rgba(16, 20, 20, 0.94);
+}
+
+.weekday-label,
+.month-spacer,
+.month-label {
+  color: #93a39a;
+  font-size: 11px;
+  line-height: 1;
+  text-align: center;
+}
+
+.month-label {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  overflow: hidden;
+  color: #b6c3bb;
+  text-align: left;
+  white-space: nowrap;
 }
 
 .day {
@@ -116,6 +153,10 @@ h1 {
   outline-offset: 2px;
 }
 
+.day.is-selected {
+  border-color: rgba(238, 244, 239, 0.46);
+}
+
 .segment {
   flex: 1 1 0;
   min-width: 0;
@@ -125,21 +166,39 @@ h1 {
   position: absolute;
   right: 4px;
   bottom: 3px;
+  opacity: 0;
   color: rgba(255, 255, 255, 0.74);
   font-size: 10px;
   line-height: 1;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
+.calendar.has-selection .day-date {
+  opacity: 1;
+}
+
+.detail-slot:empty {
+  display: none;
+}
+
+.detail-slot {
+  position: fixed;
+  z-index: 10;
+  right: 14px;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: 14px;
+  pointer-events: none;
+}
+
 .detail {
-  position: sticky;
-  bottom: 12px;
-  margin-top: 18px;
+  width: min(100%, 732px);
+  margin: 0 auto;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 12px;
   background: rgba(20, 26, 24, 0.96);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.26);
+  pointer-events: auto;
 }
 
 .detail-header {
@@ -209,8 +268,13 @@ h1 {
     padding: 28px 20px 48px;
   }
 
+  .calendar-header,
   .week {
     gap: 8px;
+    grid-template-columns: 46px repeat(7, minmax(0, 1fr));
+  }
+
+  .kpi-value {
+    font-size: 18px;
   }
 }
-
