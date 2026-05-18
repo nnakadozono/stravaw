@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.strava_tokens.json
+.DS_Store
+__pycache__/
+.pytest_cache/
+

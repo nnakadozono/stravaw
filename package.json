@@ -1,0 +1,20 @@
+{
+  "name": "strava-workout-grass",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test:py": "python3 -m unittest discover -s tests -p 'test_*.py'",
+    "auth:url": "python3 scripts/strava_auth.py url",
+    "auth:exchange": "python3 scripts/strava_auth.py exchange",
+    "sync": "python3 scripts/strava_sync.py",
+    "deploy:s3": "npm run build && aws s3 sync dist/ \"$S3_URI\" --delete"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  }
+}

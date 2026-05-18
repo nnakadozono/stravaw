@@ -1,0 +1,216 @@
+:root {
+  color-scheme: dark;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  background: #101414;
+  color: #eef4ef;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 280px),
+    #101414;
+}
+
+button {
+  font: inherit;
+}
+
+.shell {
+  width: min(100%, 760px);
+  margin: 0 auto;
+  padding: 20px 14px 36px;
+}
+
+.topbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: #9fb0a6;
+  font-size: 12px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+.updated {
+  color: #9fb0a6;
+  font-size: 12px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.kpi {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.kpi-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.kpi-label {
+  color: #b6c3bb;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.kpi-value {
+  margin-top: 4px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.calendar {
+  display: grid;
+  gap: 8px;
+}
+
+.week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.day {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  min-width: 0;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.045);
+  cursor: pointer;
+}
+
+.day:focus-visible {
+  outline: 2px solid #f0d86a;
+  outline-offset: 2px;
+}
+
+.segment {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.day-date {
+  position: absolute;
+  right: 4px;
+  bottom: 3px;
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 10px;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.detail {
+  position: sticky;
+  bottom: 12px;
+  margin-top: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(20, 26, 24, 0.96);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.26);
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.detail h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.detail-total {
+  color: #cbd7cf;
+  font-size: 13px;
+}
+
+.rows {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.sport-row {
+  display: grid;
+  grid-template-columns: 76px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.sport-swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 6px;
+  border-radius: 2px;
+  vertical-align: middle;
+}
+
+.bar {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.muted {
+  color: #8fa098;
+}
+
+.error {
+  border: 1px solid rgba(255, 116, 116, 0.32);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(124, 38, 38, 0.2);
+}
+
+@media (min-width: 560px) {
+  .shell {
+    padding: 28px 20px 48px;
+  }
+
+  .week {
+    gap: 8px;
+  }
+}
+
