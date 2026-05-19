@@ -17,7 +17,7 @@ type WorkoutData = {
   months: MonthSummary;
 };
 
-type ThemeName = "Spring";
+type ThemeName = "Spring" | "Spring Inverted" | "Neon" | "Apple" | "Cyberpunk" | "Muted";
 
 type SportTheme = {
   colors: [string, string, string, string];
@@ -50,8 +50,118 @@ const THEMES: Record<ThemeName, Record<Sport, SportTheme>> = {
       cardBorder: "rgb(154 164 161 / 0.24)",
     },
   },
+  "Spring Inverted": {
+    run: {
+      colors: ["#176b36", "#2ea043", "#73d348", "#b7ef7a"],
+      cardBackground: "rgb(115 211 72 / 0.14)",
+      cardBorder: "rgb(115 211 72 / 0.24)",
+    },
+    swim: {
+      colors: ["#1f5f9c", "#2f8ed8", "#58c7ff", "#9be7ff"],
+      cardBackground: "rgb(88 199 255 / 0.14)",
+      cardBorder: "rgb(88 199 255 / 0.24)",
+    },
+    bike: {
+      colors: ["#a81224", "#e23b4b", "#ff7a8a", "#ffc2d1"],
+      cardBackground: "rgb(255 122 138 / 0.15)",
+      cardBorder: "rgb(255 122 138 / 0.26)",
+    },
+    other: {
+      colors: ["#c7cecc", "#9aa4a1", "#7b8782", "#5f6864"],
+      cardBackground: "rgb(154 164 161 / 0.14)",
+      cardBorder: "rgb(154 164 161 / 0.24)",
+    },
+  },
+  Neon: {
+    run: {
+      colors: ["#8CF0C6", "#3DD9A1", "#1FA97A", "#116B50"],
+      cardBackground: "rgb(61 217 161 / 0.14)",
+      cardBorder: "rgb(61 217 161 / 0.24)",
+    },
+    swim: {
+      colors: ["#9BE7FF", "#55D6FF", "#1CA7D8", "#126A8C"],
+      cardBackground: "rgb(85 214 255 / 0.14)",
+      cardBorder: "rgb(85 214 255 / 0.24)",
+    },
+    bike: {
+      colors: ["#FFE08A", "#FFC247", "#D18A1D", "#8A5610"],
+      cardBackground: "rgb(255 194 71 / 0.14)",
+      cardBorder: "rgb(255 194 71 / 0.24)",
+    },
+    other: {
+      colors: ["#AEB8B5", "#7F8A87", "#59615F", "#39403E"],
+      cardBackground: "rgb(127 138 135 / 0.14)",
+      cardBorder: "rgb(127 138 135 / 0.24)",
+    },
+  },
+  Apple: {
+    run: {
+      colors: ["#B8FF6A", "#8DFF2F", "#5FD400", "#347A00"],
+      cardBackground: "rgb(141 255 47 / 0.14)",
+      cardBorder: "rgb(141 255 47 / 0.24)",
+    },
+    swim: {
+      colors: ["#7EE7FF", "#35C8FF", "#008ED1", "#005B87"],
+      cardBackground: "rgb(53 200 255 / 0.14)",
+      cardBorder: "rgb(53 200 255 / 0.24)",
+    },
+    bike: {
+      colors: ["#FFB55E", "#FF8A1F", "#D96A00", "#8A4300"],
+      cardBackground: "rgb(255 138 31 / 0.14)",
+      cardBorder: "rgb(255 138 31 / 0.24)",
+    },
+    other: {
+      colors: ["#C8D0CF", "#8C9593", "#5F6664", "#3C4240"],
+      cardBackground: "rgb(140 149 147 / 0.14)",
+      cardBorder: "rgb(140 149 147 / 0.24)",
+    },
+  },
+  Cyberpunk: {
+    run: {
+      colors: ["#6EFFB8", "#00E676", "#00B85C", "#007A3D"],
+      cardBackground: "rgb(0 230 118 / 0.14)",
+      cardBorder: "rgb(0 230 118 / 0.24)",
+    },
+    swim: {
+      colors: ["#7AF2FF", "#00D9FF", "#0099CC", "#005F80"],
+      cardBackground: "rgb(0 217 255 / 0.14)",
+      cardBorder: "rgb(0 217 255 / 0.24)",
+    },
+    bike: {
+      colors: ["#FFD86E", "#FFB300", "#D68C00", "#8C5A00"],
+      cardBackground: "rgb(255 179 0 / 0.14)",
+      cardBorder: "rgb(255 179 0 / 0.24)",
+    },
+    other: {
+      colors: ["#9EA7A4", "#707876", "#4D5452", "#2D3231"],
+      cardBackground: "rgb(112 120 118 / 0.14)",
+      cardBorder: "rgb(112 120 118 / 0.24)",
+    },
+  },
+  Muted: {
+    run: {
+      colors: ["#B7D9C5", "#7FB596", "#4F8B69", "#2E5B45"],
+      cardBackground: "rgb(127 181 150 / 0.14)",
+      cardBorder: "rgb(127 181 150 / 0.24)",
+    },
+    swim: {
+      colors: ["#BDD7E6", "#7FAEC7", "#4B7F9F", "#2A526B"],
+      cardBackground: "rgb(127 174 199 / 0.14)",
+      cardBorder: "rgb(127 174 199 / 0.24)",
+    },
+    bike: {
+      colors: ["#DCC7A1", "#B8945F", "#8A673B", "#5A4223"],
+      cardBackground: "rgb(184 148 95 / 0.14)",
+      cardBorder: "rgb(184 148 95 / 0.24)",
+    },
+    other: {
+      colors: ["#B8BDBA", "#8A908D", "#626866", "#3F4442"],
+      cardBackground: "rgb(138 144 141 / 0.14)",
+      cardBorder: "rgb(138 144 141 / 0.24)",
+    },
+  },
 };
-const ACTIVE_THEME: ThemeName = "Spring";
+let activeTheme: ThemeName = "Spring";
 
 const SPORT_THRESHOLDS_MINUTES: Record<Sport, [number, number, number, number, number]> = {
   run: [0, 40, 60, 80, 100],
@@ -143,7 +253,7 @@ function buildShell(data: WorkoutData, weeks: string[][], today: string): HTMLEl
   }
 
   attachKpiScrollSync(kpi, calendar, data);
-  shell.append(buildHeader(data.generatedAt), kpi, calendar, buildThemePicker(), detailSlot);
+  shell.append(buildHeader(data.generatedAt), kpi, calendar, buildThemePicker(data), detailSlot);
   return shell;
 }
 
@@ -158,11 +268,23 @@ function buildHeader(generatedAt: string): HTMLElement {
 function buildKpis(data: WorkoutData): HTMLElement {
   const currentMonth = latestMonthKey(data);
   const kpi = el("section", "kpi");
+  kpi.tabIndex = 0;
+  kpi.setAttribute("role", "button");
+  kpi.setAttribute("aria-expanded", "false");
+  kpi.setAttribute("aria-label", "Monthly KPI history");
+  kpi.addEventListener("click", () => toggleKpiHistory(kpi));
+  kpi.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      toggleKpiHistory(kpi);
+    }
+  });
 
   const monthCard = el("article", "kpi-month");
   monthCard.append(
     el("div", "kpi-label", ""),
     el("div", "kpi-value", "Month"),
+    buildKpiMonthHistory(data),
   );
   kpi.append(monthCard);
 
@@ -172,6 +294,7 @@ function buildKpis(data: WorkoutData): HTMLElement {
     card.append(
       el("div", "kpi-label", SPORT_LABELS[sport].toUpperCase()),
       el("div", "kpi-value", "0.0km"),
+      buildKpiHistory(data, sport),
     );
     kpi.append(card);
   }
@@ -180,21 +303,54 @@ function buildKpis(data: WorkoutData): HTMLElement {
   return kpi;
 }
 
-function buildThemePicker(): HTMLElement {
+function buildKpiMonthHistory(data: WorkoutData): HTMLElement {
+  const history = el("div", "kpi-history");
+  const months = Object.keys(data.months).sort().reverse();
+  for (const monthKey of months) {
+    const row = el("div", "kpi-history-row kpi-history-month-row", formatMonthYearShort(monthKey));
+    history.append(row);
+  }
+  return history;
+}
+
+function buildKpiHistory(data: WorkoutData, sport: Exclude<Sport, "other">): HTMLElement {
+  const history = el("div", "kpi-history");
+  const months = Object.keys(data.months).sort().reverse();
+  for (const monthKey of months) {
+    const row = el("div", "kpi-history-row");
+    row.append(el("strong", undefined, formatKpiDistance(data.months[monthKey]?.[sport]?.distanceMeters ?? 0)));
+    history.append(row);
+  }
+  return history;
+}
+
+function toggleKpiHistory(kpi: HTMLElement): void {
+  const isExpanded = !kpi.classList.contains("is-expanded");
+  kpi.classList.toggle("is-expanded", isExpanded);
+  kpi.setAttribute("aria-expanded", String(isExpanded));
+}
+
+function buildThemePicker(data: WorkoutData): HTMLElement {
   const wrap = el("label", "theme-picker");
   wrap.append(el("span", undefined, "Theme"));
   const select = el("select") as HTMLSelectElement;
-  select.disabled = true;
-  const option = el("option") as HTMLOptionElement;
-  option.value = ACTIVE_THEME;
-  option.textContent = ACTIVE_THEME;
-  select.append(option);
+  for (const themeName of Object.keys(THEMES) as ThemeName[]) {
+    const option = el("option") as HTMLOptionElement;
+    option.value = themeName;
+    option.textContent = themeName;
+    option.selected = themeName === activeTheme;
+    select.append(option);
+  }
+  select.addEventListener("change", () => {
+    activeTheme = select.value as ThemeName;
+    render(data);
+  });
   wrap.append(select);
   return wrap;
 }
 
 function applySportCardTheme(card: HTMLElement, sport: Sport): void {
-  const theme = THEMES[ACTIVE_THEME][sport];
+  const theme = THEMES[activeTheme][sport];
   card.style.background = theme.cardBackground;
   card.style.borderColor = theme.cardBorder;
 }
@@ -278,7 +434,6 @@ function buildDayButton(
   const activeSports = SPORTS.filter((sport) => (totals?.[sport]?.seconds ?? 0) > 0);
   if (totals && activeSports.length > 0) {
     button.classList.add("has-activity");
-    button.style.background = colorForSportSeconds(activeSports[0], totals[activeSports[0]].seconds);
     button.append(buildDayArtwork(activeSports, totals));
   } else {
     button.classList.add("is-rest");
@@ -361,34 +516,31 @@ function colorForSportSeconds(sport: Sport, seconds: number): string {
 }
 
 function colorForSportLevel(sport: Sport, level: 0 | 1 | 2 | 3): string {
-  return THEMES[ACTIVE_THEME][sport].colors[level];
+  return THEMES[activeTheme][sport].colors[level];
 }
 
-function buildDayArtwork(sports: Sport[], totals: SportTotals): SVGSVGElement {
+function buildDayArtwork(sports: Sport[], totals: SportTotals): HTMLElement {
   const colors = sports.map((sport) => colorForSportSeconds(sport, totals[sport].seconds));
-  const svg = svgEl("svg");
-  svg.classList.add("day-art");
-  svg.setAttribute("viewBox", "0 0 100 100");
-  svg.setAttribute("preserveAspectRatio", "none");
-  svg.setAttribute("aria-hidden", "true");
+  const art = el("span", "day-art");
+  art.setAttribute("aria-hidden", "true");
 
   const shapes =
     colors.length === 1
-      ? [["0,0 100,0 100,100 0,100"]]
+      ? [["polygon(0 0, 100% 0, 100% 100%, 0 100%)"]]
       : colors.length === 2
-        ? [["0,0 100,0 0,100"], ["100,0 100,100 0,100"]]
+        ? [["polygon(0 0, 100% 0, 0 100%)"], ["polygon(100% 0, 100% 100%, 0 100%)"]]
         : colors.length === 3
-          ? [["0,0 50,0 50,50 0,100"], ["50,0 100,0 100,100 50,50"], ["0,100 50,50 100,100"]]
-          : [["0,0 100,0 50,50"], ["100,0 100,100 50,50"], ["100,100 0,100 50,50"], ["0,100 0,0 50,50"]];
+          ? [["polygon(0 0, 50% 0, 50% 50%, 0 100%)"], ["polygon(50% 0, 100% 0, 100% 100%, 50% 50%)"], ["polygon(0 100%, 50% 50%, 100% 100%)"]]
+          : [["polygon(0 0, 100% 0, 50% 50%)"], ["polygon(100% 0, 100% 100%, 50% 50%)"], ["polygon(100% 100%, 0 100%, 50% 50%)"], ["polygon(0 100%, 0 0, 50% 50%)"]];
 
-  shapes.forEach(([points], index) => {
-    const polygon = svgEl("polygon");
-    polygon.setAttribute("points", points);
-    polygon.setAttribute("fill", colors[index]);
-    svg.append(polygon);
+  shapes.forEach(([clipPath], index) => {
+    const region = el("span", "day-region");
+    region.style.background = colors[index];
+    region.style.clipPath = clipPath;
+    art.append(region);
   });
 
-  return svg;
+  return art;
 }
 
 function formatDateKey(date: Date): string {
@@ -434,6 +586,13 @@ function formatMonthName(month: string): string {
   return new Intl.DateTimeFormat("en", { month: "short" })
     .format(new Date(year, monthIndex - 1, 1))
     .toUpperCase();
+}
+
+function formatMonthYearShort(month: string): string {
+  const [year, monthIndex] = month.split("-").map(Number);
+  return new Intl.DateTimeFormat("en", { month: "short", year: "2-digit" }).format(
+    new Date(year, monthIndex - 1, 1),
+  );
 }
 
 function formatYear(month: string): string {
@@ -488,8 +647,4 @@ function el<K extends keyof HTMLElementTagNameMap>(
   if (className) node.className = className;
   if (text !== undefined) node.textContent = text;
   return node;
-}
-
-function svgEl<K extends keyof SVGElementTagNameMap>(tag: K): SVGElementTagNameMap[K] {
-  return document.createElementNS("http://www.w3.org/2000/svg", tag);
 }
