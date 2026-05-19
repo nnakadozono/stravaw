@@ -82,21 +82,6 @@ h1 {
   background: rgba(255, 255, 255, 0.045);
 }
 
-.kpi-run {
-  border-color: rgb(44 181 98 / 0.2);
-  background: rgb(44 181 98 / 0.11);
-}
-
-.kpi-swim {
-  border-color: rgb(68 162 255 / 0.2);
-  background: rgb(68 162 255 / 0.11);
-}
-
-.kpi-bike {
-  border-color: rgb(245 166 35 / 0.22);
-  background: rgb(245 166 35 / 0.12);
-}
-
 .kpi-label {
   color: rgba(182, 195, 187, 0.68);
   font-size: 10px;
@@ -114,6 +99,29 @@ h1 {
 .kpi-month {
   padding: 10px;
   text-align: right;
+}
+
+.theme-picker {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 22px 0 0;
+  color: rgba(182, 195, 187, 0.68);
+  font-size: 11px;
+}
+
+.theme-picker select {
+  min-width: 88px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 7px;
+  padding: 5px 8px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #eef4ef;
+}
+
+.theme-picker select:disabled {
+  opacity: 1;
 }
 
 .calendar {
@@ -186,14 +194,19 @@ h1 {
 }
 
 .day.is-selected {
-  border-color: rgba(238, 244, 239, 0.46);
+  border-color: #f0d86a;
+  box-shadow: none;
+}
+
+.day.is-selected:focus-visible {
+  outline: none;
 }
 
 .day-art {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  inset: -1px;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
 }
 
 .day-date {
@@ -201,10 +214,15 @@ h1 {
   right: 4px;
   bottom: 3px;
   opacity: 0;
-  color: rgba(255, 255, 255, 0.74);
+  color: rgba(10, 16, 13, 0.5);
   font-size: 10px;
+  font-weight: 500;
   line-height: 1;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.day.is-rest .day-date {
+  color: rgba(255, 255, 255, 0.48);
+  font-weight: 400;
 }
 
 .calendar.has-selection .day-date {

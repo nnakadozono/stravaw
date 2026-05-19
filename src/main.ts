@@ -17,13 +17,47 @@ type WorkoutData = {
   months: MonthSummary;
 };
 
+type ThemeName = "Spring";
+
+type SportTheme = {
+  colors: [string, string, string, string];
+  cardBackground: string;
+  cardBorder: string;
+};
+
 const SPORTS: Sport[] = ["run", "swim", "bike", "other"];
 const KPI_SPORTS: Exclude<Sport, "other">[] = ["run", "swim", "bike"];
-const SPORT_COLORS: Record<Sport, string> = {
-  run: "44 181 98",
-  swim: "68 162 255",
-  bike: "245 166 35",
-  other: "148 156 154",
+const THEMES: Record<ThemeName, Record<Sport, SportTheme>> = {
+  Spring: {
+    run: {
+      colors: ["#b7ef7a", "#73d348", "#2ea043", "#176b36"],
+      cardBackground: "rgb(115 211 72 / 0.14)",
+      cardBorder: "rgb(115 211 72 / 0.24)",
+    },
+    swim: {
+      colors: ["#9be7ff", "#58c7ff", "#2f8ed8", "#1f5f9c"],
+      cardBackground: "rgb(88 199 255 / 0.14)",
+      cardBorder: "rgb(88 199 255 / 0.24)",
+    },
+    bike: {
+      colors: ["#ffc2d1", "#ff7a8a", "#e23b4b", "#a81224"],
+      cardBackground: "rgb(255 122 138 / 0.15)",
+      cardBorder: "rgb(255 122 138 / 0.26)",
+    },
+    other: {
+      colors: ["#5f6864", "#7b8782", "#9aa4a1", "#c7cecc"],
+      cardBackground: "rgb(154 164 161 / 0.14)",
+      cardBorder: "rgb(154 164 161 / 0.24)",
+    },
+  },
+};
+const ACTIVE_THEME: ThemeName = "Spring";
+
+const SPORT_THRESHOLDS_MINUTES: Record<Sport, [number, number, number, number, number]> = {
+  run: [0, 40, 60, 80, 100],
+  swim: [0, 40, 50, 60, 70],
+  bike: [0, 60, 90, 120, 150],
+  other: [0, 40, 60, 80, 100],
 };
 
 const SPORT_LABELS: Record<Sport, string> = {
@@ -109,7 +143,7 @@ function buildShell(data: WorkoutData, weeks: string[][], today: string): HTMLEl
   }
 
   attachKpiScrollSync(kpi, calendar, data);
-  shell.append(buildHeader(data.generatedAt), kpi, calendar, detailSlot);
+  shell.append(buildHeader(data.generatedAt), kpi, calendar, buildThemePicker(), detailSlot);
   return shell;
 }
 
@@ -134,7 +168,7 @@ function buildKpis(data: WorkoutData): HTMLElement {
 
   for (const sport of KPI_SPORTS) {
     const card = el("article", "kpi-card");
-    card.classList.add(`kpi-${sport}`);
+    applySportCardTheme(card, sport);
     card.append(
       el("div", "kpi-label", SPORT_LABELS[sport].toUpperCase()),
       el("div", "kpi-value", "0.0km"),
@@ -144,6 +178,25 @@ function buildKpis(data: WorkoutData): HTMLElement {
 
   updateKpis(kpi, data, currentMonth);
   return kpi;
+}
+
+function buildThemePicker(): HTMLElement {
+  const wrap = el("label", "theme-picker");
+  wrap.append(el("span", undefined, "Theme"));
+  const select = el("select") as HTMLSelectElement;
+  select.disabled = true;
+  const option = el("option") as HTMLOptionElement;
+  option.value = ACTIVE_THEME;
+  option.textContent = ACTIVE_THEME;
+  select.append(option);
+  wrap.append(select);
+  return wrap;
+}
+
+function applySportCardTheme(card: HTMLElement, sport: Sport): void {
+  const theme = THEMES[ACTIVE_THEME][sport];
+  card.style.background = theme.cardBackground;
+  card.style.borderColor = theme.cardBorder;
 }
 
 function attachKpiScrollSync(kpi: HTMLElement, calendar: HTMLElement, data: WorkoutData): void {
@@ -224,7 +277,11 @@ function buildDayButton(
 
   const activeSports = SPORTS.filter((sport) => (totals?.[sport]?.seconds ?? 0) > 0);
   if (totals && activeSports.length > 0) {
+    button.classList.add("has-activity");
+    button.style.background = colorForSportSeconds(activeSports[0], totals[activeSports[0]].seconds);
     button.append(buildDayArtwork(activeSports, totals));
+  } else {
+    button.classList.add("is-rest");
   }
   button.append(el("span", "day-date", dayOfMonth(date)));
 
@@ -244,13 +301,13 @@ function buildDetail(date: string, totals: SportTotals | undefined): HTMLElement
     const row = el("div", "sport-row");
     const name = el("div");
     const swatch = el("span", "sport-swatch");
-    swatch.style.background = colorForSport(sport, 0.9);
+    swatch.style.background = colorForSportLevel(sport, 0);
     name.append(swatch, document.createTextNode(SPORT_LABELS[sport]));
 
     const bar = el("div", "bar");
     const fill = el("div", "bar-fill");
     fill.style.width = `${Math.min(100, (sportTotal.seconds / 7200) * 100)}%`;
-    fill.style.background = colorForSport(sport, opacityForSeconds(sportTotal.seconds));
+    fill.style.background = colorForSportSeconds(sport, sportTotal.seconds);
     bar.append(fill);
 
     row.append(name, bar, el("div", sportTotal.seconds > 0 ? undefined : "muted", `${formatDuration(sportTotal.seconds)} · ${formatDistance(sportTotal.distanceMeters, sport)}`));
@@ -290,20 +347,25 @@ function startOfWeek(date: Date): Date {
   return copy;
 }
 
-function opacityForSeconds(seconds: number): number {
-  if (seconds <= 0) return 0;
-  if (seconds < 20 * 60) return 0.36;
-  if (seconds < 45 * 60) return 0.54;
-  if (seconds < 90 * 60) return 0.72;
-  return 0.94;
+function levelForSeconds(sport: Sport, seconds: number): 0 | 1 | 2 | 3 {
+  const minutes = seconds / 60;
+  const thresholds = SPORT_THRESHOLDS_MINUTES[sport];
+  if (minutes < thresholds[1]) return 0;
+  if (minutes < thresholds[2]) return 1;
+  if (minutes < thresholds[3]) return 2;
+  return 3;
 }
 
-function colorForSport(sport: Sport, opacity: number): string {
-  return `rgb(${SPORT_COLORS[sport]} / ${opacity})`;
+function colorForSportSeconds(sport: Sport, seconds: number): string {
+  return colorForSportLevel(sport, levelForSeconds(sport, seconds));
+}
+
+function colorForSportLevel(sport: Sport, level: 0 | 1 | 2 | 3): string {
+  return THEMES[ACTIVE_THEME][sport].colors[level];
 }
 
 function buildDayArtwork(sports: Sport[], totals: SportTotals): SVGSVGElement {
-  const colors = sports.map((sport) => colorForSport(sport, opacityForSeconds(totals[sport].seconds)));
+  const colors = sports.map((sport) => colorForSportSeconds(sport, totals[sport].seconds));
   const svg = svgEl("svg");
   svg.classList.add("day-art");
   svg.setAttribute("viewBox", "0 0 100 100");
