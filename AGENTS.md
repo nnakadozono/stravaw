@@ -32,10 +32,16 @@ The app is intentionally small and personal-use focused:
 
 - Keep the UI iPhone-first and clean by default.
 - Use the existing 7-column week grid with newest weeks first.
-- Day cells represent performed sports with equal segments in this fixed order: `run`, `swim`, `bike`, `other`.
-- Segment opacity is based on sport duration for that day.
+- Future dates after today are hidden with placeholder cells so the 7-column grid stays aligned.
+- Day cells represent performed sports with equal regions in this fixed order: `run`, `swim`, `bike`, `other`.
+- Day cells are rendered with absolutely positioned `.day-region` layers using `clip-path`; avoid SVG, conic gradients, or opacity-only color levels unless there is a specific reason.
+- Sport intensity uses four discrete color levels per sport, selected by sport-specific duration thresholds in `src/main.ts`.
 - Monthly KPI includes only `run`, `swim`, and `bike` distance.
-- `other` should stay gray.
+- KPI is sticky and updates to the visible month while scrolling.
+- Clicking the KPI area toggles a monthly history view for RUN/SWIM/BIKE without changing the four-column card layout.
+- Theme switching is implemented via `THEMES` in `src/main.ts`; the default theme is `Spring`.
+- When adding themes, keep all sport palettes to four ordered levels and include card background/border colors.
+- `other` should stay gray or neutral across themes.
 
 ## Verification
 
