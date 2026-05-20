@@ -11,7 +11,9 @@
     "auth:url": "python3 scripts/strava_auth.py url",
     "auth:exchange": "python3 scripts/strava_auth.py exchange",
     "sync": "python3 scripts/strava_sync.py",
-    "deploy:s3": "npm run build && aws s3 sync dist/ \"$S3_URI\" --delete"
+    "aws:render-local": "python3 scripts/render_aws_local_files.py",
+    "deploy:aws": "python3 scripts/deploy_static.py",
+    "deploy:s3": "python3 scripts/deploy_static.py"
   },
   "devDependencies": {
     "typescript": "^5.8.3",

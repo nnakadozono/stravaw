@@ -10,7 +10,8 @@ The deployment should:
 - include the generated `data.json` in the deployed site;
 - keep Strava credentials and tokens out of git and out of public files;
 - allow the current local `npm run sync` workflow to continue working;
-- later support an in-app refresh button that triggers a remote Strava sync.
+- use Strava webhook events as the primary remote sync trigger;
+- support a private manual fallback trigger, likely from an iPhone Shortcut.
 
 ## Current State
 
@@ -55,20 +56,41 @@ Access control options:
 
 Avoid public S3 website hosting because the bucket would be easier to expose accidentally.
 
-### Phase 2: Remote Strava Sync
+### Phase 2: Webhook-Driven Strava Sync
 
 ```text
-Manual trigger or Lambda Function URL
+Strava Webhook Events API
   |
   v
-Lambda
+Public webhook endpoint
+  - Lambda Function URL
+  - GET subscription challenge response
+  - POST event receiver
   |
-  +-- Strava API
-  +-- SSM Parameter Store for Strava credentials/tokens
-  +-- S3 put_object for data.json
+  v
+Quick HTTP 200 response
+  |
+  v
+SQS queue
+  |
+  v
+Background sync work
+  |
+  +-- validate event owner/object/aspect
+  +-- debounce and deduplicate events
+  +-- fetch latest Strava activity data
+  +-- aggregate derived data
+  +-- write S3 data.json
+  +-- optionally invalidate CloudFront data paths
 ```
 
-The Lambda should reuse the existing aggregation logic where practical.
+The webhook endpoint is expected to be publicly reachable because Strava needs to call it. It must still reject unrelated or malformed events.
+
+Strava subscription creation sends a `GET` validation request containing `hub.challenge`, `hub.mode`, and `hub.verify_token`. The endpoint must validate the configured verify token and echo the challenge as JSON quickly.
+
+Strava event delivery uses `POST`. The POST handler should respond quickly and avoid long synchronous work. The receiver Lambda should validate accepted events, enqueue them into SQS, and return HTTP 200.
+
+The worker Lambda should be triggered by SQS and reuse the existing aggregation logic where practical.
 
 The local sync path and AWS sync path should share the Strava fetch and aggregation behavior, but use different storage backends:
 
@@ -77,33 +99,36 @@ The local sync path and AWS sync path should share the Strava fetch and aggregat
 | Strava client ID/secret | `.env` | SSM Parameter Store |
 | Refresh token | `.strava_tokens.json` / `.env` | SSM Parameter Store |
 | Generated output | `public/data.json` | S3 `data.json` |
-| Invocation | `npm run sync` | Lambda |
+| Invocation | `npm run sync` | Strava webhook / manual Lambda trigger |
 
-### Phase 3: In-App Refresh Button
+### Phase 3: Manual Fallback Trigger
 
 ```text
-Browser
+iPhone Shortcut or local curl
   |
-  | POST /api/refresh
+  | POST /manual-refresh
+  | X-Refresh-Token: secret
   v
-CloudFront
+Lambda Function URL
   |
-  v
-Lambda Function URL or API Gateway
-  |
-  v
-Lambda sync
-  |
-  v
-S3 data.json updated
-  |
-  v
-Browser refetches /data.json with cache busting
+  +-- validate secret header
+  +-- enqueue a manual refresh event into SQS
 ```
 
-This should be added after the Lambda sync works independently.
+This avoids putting any refresh secret in public static JavaScript or HTML.
 
-The refresh endpoint must be protected. It should not be a public unauthenticated URL.
+Expected uses:
+
+- force refresh;
+- retry failed webhook updates;
+- test and debug the AWS sync path;
+- temporarily sync when webhook delivery is delayed or disabled.
+
+### Deferred: In-App Refresh Button
+
+An in-app refresh button is no longer the preferred first remote trigger because any secret embedded in static JavaScript would be public to anyone who can view the app.
+
+If added later, it should call a protected backend endpoint through the same owner-only access layer as the app, or use an auth mechanism that does not expose a long-lived shared secret in static files.
 
 ## Recommended Implementation Order
 
@@ -156,30 +181,49 @@ The local entry point should keep writing to `public/data.json`.
 
 The AWS entry point should write to S3 and update SSM Parameter Store.
 
-### 6. Add Lambda Sync
+### 6. Add Lambda Sync Worker
 
 - Package a Lambda handler using Python.
 - Store Strava credentials and the current refresh token in SSM Parameter Store.
 - Give the Lambda IAM permission to:
   - read/write the required SSM parameters;
   - write `data.json` to the S3 bucket;
+  - optionally create CloudFront invalidations for `data.json`;
+  - consume messages from the SQS queue;
   - write logs to CloudWatch.
 - Invoke the Lambda manually first.
 - Confirm that it updates `data.json` in S3.
 
-### 7. Add UI Refresh Button
+### 7. Add Strava Webhook Receiver
 
-- Add a small refresh control near the updated timestamp.
-- On click, call the protected refresh endpoint.
-- Show loading, success, and error states.
-- After success, refetch `/data.json` with a cache-busting query parameter.
-- Re-render the app.
+- Add an HTTP endpoint using Lambda Function URL.
+- Implement Strava subscription validation:
+  - handle `GET`;
+  - validate `hub.verify_token`;
+  - echo `hub.challenge` as JSON.
+- Implement event receiving:
+  - handle `POST`;
+  - validate expected owner/athlete ID;
+  - accept only relevant `object_type` and `aspect_type` values;
+  - ignore duplicate or unnecessary events;
+  - enqueue accepted events into SQS;
+  - return HTTP 200 quickly.
+- Trigger the sync worker from SQS.
+- Create the Strava webhook subscription.
+- Test create/update/delete event behavior with real activities.
 
-### 8. Optional Scheduled Sync
+### 8. Add Manual Fallback Trigger
 
-After the manual refresh flow is reliable, add EventBridge Scheduler for a daily automatic sync.
+- Add a manual refresh endpoint or route.
+- Require a secret request header stored outside the static app.
+- Use this from an iPhone Shortcut, local curl, or temporary debugging tool.
+- Enqueue a manual refresh event into SQS so it uses the same worker path as webhook events.
 
-This is optional because the in-app refresh button may be enough for personal use.
+### 9. Optional Scheduled Sync
+
+After the webhook and manual fallback are reliable, add EventBridge Scheduler for a daily automatic sync if desired.
+
+This is optional because webhook events should cover normal activity changes.
 
 ## Cost Strategy
 
@@ -191,6 +235,7 @@ Use:
 - CloudFront for delivery;
 - CloudFront Function for Basic Auth;
 - Lambda for sync;
+- SQS for webhook/manual trigger buffering;
 - SSM Parameter Store instead of Secrets Manager unless Secrets Manager rotation is explicitly needed.
 
 Avoid at first:
@@ -211,8 +256,41 @@ Set an AWS Budget alert before deploying anything public.
 - Do not publish raw Strava activity names, maps, coordinates, or tokens.
 - Keep S3 Block Public Access enabled.
 - Prefer CloudFront-only access to S3.
-- Protect any refresh endpoint before connecting it to the UI.
+- Keep the Strava webhook endpoint public but narrow:
+  - validate `hub.verify_token` for subscription challenge requests;
+  - validate expected owner/athlete ID on event requests;
+  - validate object type and aspect type;
+  - ignore unrelated events.
+- Protect the manual refresh endpoint with a secret header.
+- Do not embed manual refresh secrets in static JavaScript or HTML.
 - Rotate Strava credentials if they are accidentally exposed.
+
+## Webhook Event Handling Rules
+
+Initial event filtering:
+
+- accept `object_type=activity`;
+- accept `aspect_type=create`;
+- accept `aspect_type=delete`;
+- accept all `aspect_type=update` events and regenerate the data;
+- validate the expected owner/athlete ID from SSM or Lambda environment configuration.
+
+Idempotency and rate limiting:
+
+- treat duplicate events for the same activity as normal;
+- store a small sync state record in SSM Parameter Store;
+- skip regeneration if the last successful sync was within 60 seconds;
+- make full regeneration safe to run repeatedly;
+- prefer correctness over trying to apply per-activity deltas at first.
+
+Background processing:
+
+- the receiver should return quickly;
+- the receiver should put accepted events onto SQS;
+- the worker should consume SQS messages;
+- the worker can fetch the recent activity window and regenerate `data.json`;
+- the worker should persist rotated Strava refresh tokens;
+- the worker should log enough detail to debug ignored events and failed syncs without logging secrets.
 
 ## Verification Checklist
 
@@ -224,14 +302,23 @@ Before considering each phase complete:
 - Confirm the deployed app loads `data.json`.
 - Confirm S3 direct object access is blocked.
 - Confirm CloudFront access requires authentication.
+- Confirm Strava webhook subscription validation succeeds.
+- Confirm webhook event POSTs are filtered and logged correctly.
+- Confirm manual refresh requires the secret header.
 - Confirm no ignored personal files are staged in git.
 
 ## Open Decisions
 
-- Whether to use CloudFormation, CDK, Terraform, or manual AWS console setup.
 - Whether to use CloudFront Function Basic Auth or Cognito for owner-only access.
-- Whether the first AWS sync trigger should be manual Lambda invocation or a protected HTTP endpoint.
-- Whether scheduled sync is useful after the refresh button exists.
+- Whether scheduled sync is useful after webhook and manual fallback triggers exist.
+
+## Resource Management Approach
+
+Use AWS CLI commands executed one at a time, with AWS Console checks after important steps.
+
+Do not start with a large provisioning script, CDK app, or Terraform module. The first AWS rollout should favor learning, visibility, and easy manual verification.
+
+Record reusable commands with placeholders in [aws-cli-runbook.md](aws-cli-runbook.md). Keep real account IDs, bucket names, distribution IDs, and other private deployment values in local ignored files such as `.aws-deploy.env`.
 
 ## Suggested Next Step
 
@@ -242,4 +329,4 @@ Start with Phase 1:
 3. add Basic Auth;
 4. deploy the existing built app including locally generated `data.json`.
 
-Do not build the refresh button until static private hosting is working.
+Do not build webhook or manual refresh triggers until static private hosting is working.

@@ -2,6 +2,10 @@ node_modules/
 dist/
 public/data.json
 .env
+.aws-deploy.env
+.aws-cloudfront-basic-auth.js
+.aws-cloudfront-distribution-config.json
+.aws-s3-bucket-policy.json
 .strava_tokens.json
 .DS_Store
 __pycache__/

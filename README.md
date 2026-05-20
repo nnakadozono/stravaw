@@ -47,10 +47,39 @@ Published JSON contains only derived totals:
 
 It does not publish tokens, activity names, maps, or location data.
 
-## Deploy to S3
+## Deploy to AWS
 
 ```sh
-S3_URI=s3://your-bucket/secret-path npm run deploy:s3
+AWS_DEPLOY_S3_URI=s3://your-private-bucket/site \
+AWS_CLOUDFRONT_DISTRIBUTION_ID=E123EXAMPLE \
+npm run deploy:aws
 ```
 
-This builds the static site and syncs `dist/` to S3. Use a hard-to-guess bucket path or CloudFront path for lightweight personal access control.
+This builds the static site, syncs `dist/` to S3, and creates a CloudFront invalidation when `AWS_CLOUDFRONT_DISTRIBUTION_ID` is set.
+
+Before deploying personal data, run:
+
+```sh
+npm run sync
+```
+
+The deploy command expects `public/data.json` to exist so the hosted app shows personal derived workout totals. To intentionally deploy with sample data only:
+
+```sh
+AWS_DEPLOY_ALLOW_MISSING_DATA=1 AWS_DEPLOY_S3_URI=s3://your-private-bucket/site npm run deploy:aws
+```
+
+Recommended AWS hosting setup:
+
+- private S3 bucket with Block Public Access enabled
+- CloudFront distribution using S3 as a private origin
+- Origin Access Control so only CloudFront can read the bucket
+- CloudFront Function Basic Auth, or a stronger owner-only access layer
+
+Local-only AWS config lives in `.aws-deploy.env`, which is ignored by git. After filling it in, regenerate derived local AWS files with:
+
+```sh
+npm run aws:render-local
+```
+
+See [docs/aws-deployment-plan.md](docs/aws-deployment-plan.md) for the staged rollout plan.
