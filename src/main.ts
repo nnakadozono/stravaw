@@ -17,7 +17,12 @@ type WorkoutData = {
   months: MonthSummary;
 };
 
-type ThemeName = "Spring" | "Spring Inverted" | "Neon" | "Apple" | "Cyberpunk" | "Muted";
+type ThemeName =
+  | "May"
+  | "Neon"
+  | "Apple"
+  | "Cyberpunk"
+  | "Muted";
 
 type SportTheme = {
   colors: [string, string, string, string];
@@ -27,49 +32,33 @@ type SportTheme = {
 
 const SPORTS: Sport[] = ["run", "swim", "bike", "other"];
 const KPI_SPORTS: Exclude<Sport, "other">[] = ["run", "swim", "bike"];
+const EXPORT_CELL = 18;
+const EXPORT_GAP = 6;
+const EXPORT_PADDING = 28;
+const EXPORT_LABEL_WIDTH = 74;
+const EXPORT_MONTH_HEIGHT = 66;
+const EXPORT_FOOTER_HEIGHT = 64;
 const THEMES: Record<ThemeName, Record<Sport, SportTheme>> = {
-  Spring: {
+  May: {
     run: {
-      colors: ["#b7ef7a", "#73d348", "#2ea043", "#176b36"],
-      cardBackground: "rgb(115 211 72 / 0.14)",
-      cardBorder: "rgb(115 211 72 / 0.24)",
+      colors: ["#d8f5ad", "#a8e06f", "#67c15d", "#3d8b52"],
+      cardBackground: "rgb(168 224 111 / 0.14)",
+      cardBorder: "rgb(168 224 111 / 0.24)",
     },
     swim: {
-      colors: ["#9be7ff", "#58c7ff", "#2f8ed8", "#1f5f9c"],
-      cardBackground: "rgb(88 199 255 / 0.14)",
-      cardBorder: "rgb(88 199 255 / 0.24)",
+      colors: ["#c9f1ff", "#8edfff", "#56b7e6", "#347ea8"],
+      cardBackground: "rgb(142 223 255 / 0.14)",
+      cardBorder: "rgb(142 223 255 / 0.24)",
     },
     bike: {
-      colors: ["#ffc2d1", "#ff7a8a", "#e23b4b", "#a81224"],
-      cardBackground: "rgb(255 122 138 / 0.15)",
-      cardBorder: "rgb(255 122 138 / 0.26)",
+      colors: ["#ffd7cf", "#ffab97", "#ea7864", "#b04f42"],
+      cardBackground: "rgb(255 171 151 / 0.15)",
+      cardBorder: "rgb(255 171 151 / 0.26)",
     },
     other: {
-      colors: ["#5f6864", "#7b8782", "#9aa4a1", "#c7cecc"],
-      cardBackground: "rgb(154 164 161 / 0.14)",
-      cardBorder: "rgb(154 164 161 / 0.24)",
-    },
-  },
-  "Spring Inverted": {
-    run: {
-      colors: ["#176b36", "#2ea043", "#73d348", "#b7ef7a"],
-      cardBackground: "rgb(115 211 72 / 0.14)",
-      cardBorder: "rgb(115 211 72 / 0.24)",
-    },
-    swim: {
-      colors: ["#1f5f9c", "#2f8ed8", "#58c7ff", "#9be7ff"],
-      cardBackground: "rgb(88 199 255 / 0.14)",
-      cardBorder: "rgb(88 199 255 / 0.24)",
-    },
-    bike: {
-      colors: ["#a81224", "#e23b4b", "#ff7a8a", "#ffc2d1"],
-      cardBackground: "rgb(255 122 138 / 0.15)",
-      cardBorder: "rgb(255 122 138 / 0.26)",
-    },
-    other: {
-      colors: ["#c7cecc", "#9aa4a1", "#7b8782", "#5f6864"],
-      cardBackground: "rgb(154 164 161 / 0.14)",
-      cardBorder: "rgb(154 164 161 / 0.24)",
+      colors: ["#d8deda", "#b4beb8", "#88948d", "#5f6a64"],
+      cardBackground: "rgb(180 190 184 / 0.14)",
+      cardBorder: "rgb(180 190 184 / 0.24)",
     },
   },
   Neon: {
@@ -161,7 +150,7 @@ const THEMES: Record<ThemeName, Record<Sport, SportTheme>> = {
     },
   },
 };
-let activeTheme: ThemeName = "Spring";
+let activeTheme: ThemeName = "May";
 
 const SPORT_THRESHOLDS_MINUTES: Record<Sport, [number, number, number, number, number]> = {
   run: [0, 40, 60, 80, 100],
@@ -232,7 +221,7 @@ function buildShell(data: WorkoutData, weeks: string[][], today: string): HTMLEl
       day.setAttribute("aria-pressed", String(isSelected));
     }
 
-    detail = selectedDate ? buildDetail(selectedDate, data.days[selectedDate]) : null;
+    detail = selectedDate ? buildDetail(selectedDate, data.days[selectedDate], () => renderSelection(selectedDate)) : null;
     detailSlot.replaceChildren(...(detail ? [detail] : []));
   };
 
@@ -253,15 +242,28 @@ function buildShell(data: WorkoutData, weeks: string[][], today: string): HTMLEl
   }
 
   attachKpiScrollSync(kpi, calendar, data);
-  shell.append(buildHeader(data.generatedAt), kpi, calendar, buildThemePicker(data), detailSlot);
+  shell.append(buildHeader(data.generatedAt, () => saveWorkoutImage(data, weeks, today)), kpi, calendar, buildThemePicker(data), detailSlot);
   return shell;
 }
 
-function buildHeader(generatedAt: string): HTMLElement {
+function buildHeader(generatedAt: string, onSave: () => Promise<void>): HTMLElement {
   const topbar = el("header", "topbar");
   const titleWrap = el("div");
   titleWrap.append(el("h1", undefined, "Stravaw"));
-  topbar.append(titleWrap, el("div", "updated", `Updated ${formatDateTime(generatedAt)}`));
+  const actions = el("div", "topbar-actions");
+  const saveButton = el("button", "save-button") as HTMLButtonElement;
+  saveButton.type = "button";
+  saveButton.ariaLabel = "Save image";
+  saveButton.title = "Save image";
+  saveButton.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>`;
+  saveButton.addEventListener("click", () => {
+    void onSave().catch((error: unknown) => {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      console.error(error);
+    });
+  });
+  actions.append(saveButton, el("div", "updated", `Updated ${formatDateTime(generatedAt)}`));
+  topbar.append(titleWrap, actions);
   return topbar;
 }
 
@@ -444,8 +446,9 @@ function buildDayButton(
   return button;
 }
 
-function buildDetail(date: string, totals: SportTotals | undefined): HTMLElement {
+function buildDetail(date: string, totals: SportTotals | undefined, onClose: () => void): HTMLElement {
   const detail = el("aside", "detail");
+  detail.addEventListener("click", onClose);
   const totalSeconds = SPORTS.reduce((sum, sport) => sum + (totals?.[sport]?.seconds ?? 0), 0);
   const header = el("div", "detail-header");
   header.append(el("h2", undefined, formatLongDate(date)), el("div", "detail-total", formatDuration(totalSeconds)));
@@ -543,6 +546,259 @@ function buildDayArtwork(sports: Sport[], totals: SportTotals): HTMLElement {
   return art;
 }
 
+async function saveWorkoutImage(data: WorkoutData, weeks: string[][], today: string): Promise<void> {
+  const canvas = buildWorkoutImage(data, weeks, today);
+  const blob = await canvasToBlob(canvas);
+  const fileName = `stravaw-${today}.png`;
+  const file = new File([blob], fileName, { type: "image/png" });
+
+  if (navigator.canShare?.({ files: [file] })) {
+    await navigator.share({
+      files: [file],
+      title: "Stravaw",
+    });
+    return;
+  }
+
+  downloadBlob(blob, fileName);
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        resolve(blob);
+      } else {
+        reject(new Error("Failed to render image"));
+      }
+    }, "image/png");
+  });
+}
+
+function downloadBlob(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function buildWorkoutImage(data: WorkoutData, weeks: string[][], today: string): HTMLCanvasElement {
+  const exportWeeks = [...weeks].reverse();
+  const columnStep = EXPORT_CELL + EXPORT_GAP;
+  const width = EXPORT_PADDING * 2 + EXPORT_LABEL_WIDTH + exportWeeks.length * columnStep - EXPORT_GAP;
+  const gridHeight = 7 * EXPORT_CELL + 6 * EXPORT_GAP;
+  const height = EXPORT_PADDING * 2 + EXPORT_MONTH_HEIGHT + gridHeight + EXPORT_FOOTER_HEIGHT;
+  const scale = Math.max(2, Math.ceil(window.devicePixelRatio || 1));
+  const canvas = document.createElement("canvas");
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+
+  const context = canvas.getContext("2d");
+  if (!context) return canvas;
+
+  context.scale(scale, scale);
+  context.fillStyle = "#101414";
+  context.fillRect(0, 0, width, height);
+
+  const gridX = EXPORT_PADDING + EXPORT_LABEL_WIDTH;
+  const titleY = EXPORT_PADDING + 26;
+  const monthY = EXPORT_PADDING + 54;
+  const gridY = EXPORT_PADDING + EXPORT_MONTH_HEIGHT;
+  const panelX = EXPORT_PADDING;
+  const panelY = EXPORT_PADDING;
+  const panelWidth = width - EXPORT_PADDING * 2;
+  const panelHeight = height - EXPORT_PADDING * 2;
+
+  drawRoundedRect(context, panelX, panelY, panelWidth, panelHeight, 8, "#111818");
+
+  context.fillStyle = "#cbd7cf";
+  context.font = "600 18px Inter, system-ui, sans-serif";
+  context.textBaseline = "middle";
+  context.fillText("Stravaw", panelX + 18, titleY);
+
+  context.fillStyle = "#9fb0a6";
+  context.font = "12px Inter, system-ui, sans-serif";
+  context.fillText(`Updated ${formatExportDateTime(data.generatedAt)}`, panelX + 18, panelY + panelHeight - 26);
+
+  drawExportMonths(context, exportWeeks, gridX, monthY, columnStep);
+  drawExportWeekdays(context, gridY);
+
+  exportWeeks.forEach((week, weekIndex) => {
+    week.forEach((date, dayIndex) => {
+      const x = gridX + weekIndex * columnStep;
+      const y = gridY + dayIndex * columnStep;
+      if (date > today) return;
+      drawExportDay(context, x, y, data.days[date]);
+    });
+  });
+
+  drawExportSportLegend(context, panelX + panelWidth - 342, panelY + panelHeight - 32);
+
+  return canvas;
+}
+
+function drawExportMonths(
+  context: CanvasRenderingContext2D,
+  weeks: string[][],
+  gridX: number,
+  y: number,
+  columnStep: number,
+): void {
+  context.fillStyle = "#cbd7cf";
+  context.font = "14px Inter, system-ui, sans-serif";
+  context.textBaseline = "middle";
+
+  weeks.forEach((week, index) => {
+    const firstOfMonth = week.find((date) => parseDateKey(date).getDate() === 1);
+    if (firstOfMonth) {
+      context.fillText(shortMonth(firstOfMonth), gridX + index * columnStep, y);
+    }
+  });
+}
+
+function drawExportWeekdays(context: CanvasRenderingContext2D, gridY: number): void {
+  context.fillStyle = "#cbd7cf";
+  context.font = "14px Inter, system-ui, sans-serif";
+  context.textBaseline = "middle";
+  [
+    ["MON", 0],
+    ["WED", 2],
+    ["FRI", 4],
+  ].forEach(([label, index]) => {
+    context.fillText(String(label), EXPORT_PADDING + 18, gridY + Number(index) * (EXPORT_CELL + EXPORT_GAP) + EXPORT_CELL / 2);
+  });
+}
+
+function drawExportDay(context: CanvasRenderingContext2D, x: number, y: number, totals: SportTotals | undefined): void {
+  drawRoundedRect(context, x, y, EXPORT_CELL, EXPORT_CELL, 4, "#1b2423");
+  const activeSports = SPORTS.filter((sport) => (totals?.[sport]?.seconds ?? 0) > 0);
+  if (!totals || activeSports.length === 0) return;
+
+  context.save();
+  roundedRectPath(context, x, y, EXPORT_CELL, EXPORT_CELL, 4);
+  context.clip();
+
+  const colors = activeSports.map((sport) => colorForSportSeconds(sport, totals[sport].seconds));
+  if (colors.length === 1) {
+    context.fillStyle = colors[0];
+    context.fillRect(x, y, EXPORT_CELL, EXPORT_CELL);
+  } else if (colors.length === 2) {
+    drawTriangle(context, colors[0], x, y, x + EXPORT_CELL, y, x, y + EXPORT_CELL);
+    drawTriangle(context, colors[1], x + EXPORT_CELL, y, x + EXPORT_CELL, y + EXPORT_CELL, x, y + EXPORT_CELL);
+  } else if (colors.length === 3) {
+    drawPolygon(context, colors[0], [
+      [x, y],
+      [x + EXPORT_CELL / 2, y],
+      [x + EXPORT_CELL / 2, y + EXPORT_CELL / 2],
+      [x, y + EXPORT_CELL],
+    ]);
+    drawPolygon(context, colors[1], [
+      [x + EXPORT_CELL / 2, y],
+      [x + EXPORT_CELL, y],
+      [x + EXPORT_CELL, y + EXPORT_CELL],
+      [x + EXPORT_CELL / 2, y + EXPORT_CELL / 2],
+    ]);
+    drawTriangle(context, colors[2], x, y + EXPORT_CELL, x + EXPORT_CELL / 2, y + EXPORT_CELL / 2, x + EXPORT_CELL, y + EXPORT_CELL);
+  } else {
+    drawTriangle(context, colors[0], x, y, x + EXPORT_CELL, y, x + EXPORT_CELL / 2, y + EXPORT_CELL / 2);
+    drawTriangle(context, colors[1], x + EXPORT_CELL, y, x + EXPORT_CELL, y + EXPORT_CELL, x + EXPORT_CELL / 2, y + EXPORT_CELL / 2);
+    drawTriangle(context, colors[2], x + EXPORT_CELL, y + EXPORT_CELL, x, y + EXPORT_CELL, x + EXPORT_CELL / 2, y + EXPORT_CELL / 2);
+    drawTriangle(context, colors[3], x, y + EXPORT_CELL, x, y, x + EXPORT_CELL / 2, y + EXPORT_CELL / 2);
+  }
+
+  context.restore();
+}
+
+function drawExportSportLegend(context: CanvasRenderingContext2D, x: number, y: number): void {
+  context.font = "12px Inter, system-ui, sans-serif";
+  context.textBaseline = "middle";
+  SPORTS.forEach((sport, index) => {
+    const itemX = x + index * 80;
+    drawRoundedRect(context, itemX, y - 7, 14, 14, 3, colorForSportLevel(sport, 2));
+    context.fillStyle = "#9fb0a6";
+    context.fillText(SPORT_LABELS[sport], itemX + 20, y);
+  });
+}
+
+function drawRoundedRect(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+  fill: string,
+  stroke?: string,
+): void {
+  context.beginPath();
+  roundedRectPath(context, x, y, width, height, radius);
+  context.fillStyle = fill;
+  context.fill();
+  if (stroke) {
+    context.strokeStyle = stroke;
+    context.lineWidth = 1;
+    context.stroke();
+  }
+}
+
+function roundedRectPath(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+): void {
+  context.beginPath();
+  context.moveTo(x + radius, y);
+  context.lineTo(x + width - radius, y);
+  context.quadraticCurveTo(x + width, y, x + width, y + radius);
+  context.lineTo(x + width, y + height - radius);
+  context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  context.lineTo(x + radius, y + height);
+  context.quadraticCurveTo(x, y + height, x, y + height - radius);
+  context.lineTo(x, y + radius);
+  context.quadraticCurveTo(x, y, x + radius, y);
+  context.closePath();
+}
+
+function drawTriangle(
+  context: CanvasRenderingContext2D,
+  fill: string,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  x3: number,
+  y3: number,
+): void {
+  drawPolygon(context, fill, [
+    [x1, y1],
+    [x2, y2],
+    [x3, y3],
+  ]);
+}
+
+function drawPolygon(context: CanvasRenderingContext2D, fill: string, points: [number, number][]): void {
+  context.beginPath();
+  points.forEach(([pointX, pointY], index) => {
+    if (index === 0) {
+      context.moveTo(pointX, pointY);
+    } else {
+      context.lineTo(pointX, pointY);
+    }
+  });
+  context.closePath();
+  context.fillStyle = fill;
+  context.fill();
+}
+
 function formatDateKey(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -612,6 +868,18 @@ function formatDateTime(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function formatExportDateTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en", {
+    year: "numeric",
     month: "short",
     day: "numeric",
     hour: "2-digit",
