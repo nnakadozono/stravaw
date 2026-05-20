@@ -47,6 +47,11 @@ button {
   gap: 5px;
 }
 
+.topbar-buttons {
+  display: flex;
+  gap: 6px;
+}
+
 .eyebrow {
   margin: 0 0 4px;
   color: #9fb0a6;
@@ -68,7 +73,7 @@ h1 {
   white-space: nowrap;
 }
 
-.save-button {
+.icon-button {
   display: inline-grid;
   place-items: center;
   width: 28px;
@@ -81,7 +86,7 @@ h1 {
   cursor: pointer;
 }
 
-.save-button svg {
+.icon-button svg {
   width: 16px;
   height: 16px;
   fill: none;
@@ -91,7 +96,7 @@ h1 {
   stroke-width: 2;
 }
 
-.save-button:focus-visible {
+.icon-button:focus-visible {
   outline: 2px solid #f0d86a;
   outline-offset: 2px;
 }

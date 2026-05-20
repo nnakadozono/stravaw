@@ -40,10 +40,10 @@ The app is intentionally small and personal-use focused:
 - KPI is sticky and updates to the visible month while scrolling.
 - Clicking the KPI area toggles a monthly history view for RUN/SWIM/BIKE without changing the four-column card layout.
 - Clicking the selected day cell or the open detail card closes the detail card.
-- The header image save control should remain a compact icon button above the updated timestamp.
+- The header image controls should remain compact icon buttons above the updated timestamp: share first, then download.
 - The saved image is generated from canvas in `src/main.ts` as a landscape GitHub-contribution-style grid.
 - The saved image should use the current theme, show `Stravaw` as the title, include an updated timestamp with the year, use uppercase month and weekday labels, and omit monthly KPI cards.
-- Saved image sharing should prefer Web Share API file sharing when available, with PNG download as the fallback.
+- Saved image sharing should prefer Web Share API file sharing when available, with PNG download as the share fallback; the download icon should always use PNG download.
 - Theme switching is implemented via `THEMES` in `src/main.ts`; the default theme is `May`.
 - When adding themes, keep all sport palettes to four ordered levels and include card background/border colors.
 - `other` should stay gray or neutral across themes.

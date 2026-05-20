@@ -242,29 +242,52 @@ function buildShell(data: WorkoutData, weeks: string[][], today: string): HTMLEl
   }
 
   attachKpiScrollSync(kpi, calendar, data);
-  shell.append(buildHeader(data.generatedAt, () => saveWorkoutImage(data, weeks, today)), kpi, calendar, buildThemePicker(data), detailSlot);
+  shell.append(
+    buildHeader(
+      data.generatedAt,
+      () => shareWorkoutImage(data, weeks, today),
+      () => downloadWorkoutImage(data, weeks, today),
+    ),
+    kpi,
+    calendar,
+    buildThemePicker(data),
+    detailSlot,
+  );
   return shell;
 }
 
-function buildHeader(generatedAt: string, onSave: () => Promise<void>): HTMLElement {
+function buildHeader(
+  generatedAt: string,
+  onShare: () => Promise<void>,
+  onDownload: () => Promise<void>,
+): HTMLElement {
   const topbar = el("header", "topbar");
   const titleWrap = el("div");
   titleWrap.append(el("h1", undefined, "Stravaw"));
   const actions = el("div", "topbar-actions");
-  const saveButton = el("button", "save-button") as HTMLButtonElement;
-  saveButton.type = "button";
-  saveButton.ariaLabel = "Save image";
-  saveButton.title = "Save image";
-  saveButton.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>`;
-  saveButton.addEventListener("click", () => {
-    void onSave().catch((error: unknown) => {
+  const buttons = el("div", "topbar-buttons");
+  buttons.append(
+    buildIconButton("Share image", `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0-12 4 4m-4-4-4 4M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>`, onShare),
+    buildIconButton("Download image", `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>`, onDownload),
+  );
+  actions.append(buttons, el("div", "updated", `Updated ${formatDateTime(generatedAt)}`));
+  topbar.append(titleWrap, actions);
+  return topbar;
+}
+
+function buildIconButton(label: string, icon: string, onClick: () => Promise<void>): HTMLButtonElement {
+  const button = el("button", "icon-button") as HTMLButtonElement;
+  button.type = "button";
+  button.ariaLabel = label;
+  button.title = label;
+  button.innerHTML = icon;
+  button.addEventListener("click", () => {
+    void onClick().catch((error: unknown) => {
       if (error instanceof DOMException && error.name === "AbortError") return;
       console.error(error);
     });
   });
-  actions.append(saveButton, el("div", "updated", `Updated ${formatDateTime(generatedAt)}`));
-  topbar.append(titleWrap, actions);
-  return topbar;
+  return button;
 }
 
 function buildKpis(data: WorkoutData): HTMLElement {
@@ -546,9 +569,8 @@ function buildDayArtwork(sports: Sport[], totals: SportTotals): HTMLElement {
   return art;
 }
 
-async function saveWorkoutImage(data: WorkoutData, weeks: string[][], today: string): Promise<void> {
-  const canvas = buildWorkoutImage(data, weeks, today);
-  const blob = await canvasToBlob(canvas);
+async function shareWorkoutImage(data: WorkoutData, weeks: string[][], today: string): Promise<void> {
+  const blob = await renderWorkoutImageBlob(data, weeks, today);
   const fileName = `stravaw-${today}.png`;
   const file = new File([blob], fileName, { type: "image/png" });
 
@@ -561,6 +583,15 @@ async function saveWorkoutImage(data: WorkoutData, weeks: string[][], today: str
   }
 
   downloadBlob(blob, fileName);
+}
+
+async function downloadWorkoutImage(data: WorkoutData, weeks: string[][], today: string): Promise<void> {
+  const blob = await renderWorkoutImageBlob(data, weeks, today);
+  downloadBlob(blob, `stravaw-${today}.png`);
+}
+
+function renderWorkoutImageBlob(data: WorkoutData, weeks: string[][], today: string): Promise<Blob> {
+  return canvasToBlob(buildWorkoutImage(data, weeks, today));
 }
 
 function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
@@ -856,12 +887,15 @@ function formatYear(month: string): string {
 }
 
 function formatLongDate(date: string): string {
-  return new Intl.DateTimeFormat("en", {
+  const parts = new Intl.DateTimeFormat("en", {
     weekday: "short",
     month: "short",
     day: "numeric",
     year: "numeric",
-  }).format(parseDateKey(date));
+  }).formatToParts(parseDateKey(date));
+  const part = (type: Intl.DateTimeFormatPartTypes): string =>
+    parts.find((datePart) => datePart.type === type)?.value ?? "";
+  return `${part("weekday")} ${part("month")} ${part("day")}, ${part("year")}`;
 }
 
 function formatDateTime(value: string): string {
