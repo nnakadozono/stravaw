@@ -177,12 +177,34 @@ h1 {
   text-align: right;
 }
 
+.calendar-actions {
+  display: grid;
+  align-items: center;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 6px;
+  margin: 22px 0 0;
+}
+
+.data-link {
+  grid-column: 2;
+  justify-self: start;
+  color: #eef4ef;
+  font-size: 13px;
+  text-decoration-color: rgba(238, 244, 239, 0.5);
+  text-underline-offset: 3px;
+}
+
+.data-link:focus-visible {
+  outline: 2px solid #f0d86a;
+  outline-offset: 3px;
+}
+
 .theme-picker {
+  grid-column: 3;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  margin: 22px 0 0;
   color: rgba(182, 195, 187, 0.68);
   font-size: 11px;
 }
@@ -401,6 +423,11 @@ h1 {
   .week {
     gap: 8px;
     grid-template-columns: 46px repeat(7, minmax(0, 1fr));
+  }
+
+  .calendar-actions {
+    gap: 8px;
+    grid-template-columns: 46px minmax(0, 1fr) auto;
   }
 
   .kpi-value {

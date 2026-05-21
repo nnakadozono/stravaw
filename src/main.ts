@@ -250,7 +250,7 @@ function buildShell(data: WorkoutData, weeks: string[][], today: string): HTMLEl
     ),
     kpi,
     calendar,
-    buildThemePicker(data),
+    buildCalendarActions(data),
     detailSlot,
   );
   return shell;
@@ -353,6 +353,15 @@ function toggleKpiHistory(kpi: HTMLElement): void {
   const isExpanded = !kpi.classList.contains("is-expanded");
   kpi.classList.toggle("is-expanded", isExpanded);
   kpi.setAttribute("aria-expanded", String(isExpanded));
+}
+
+function buildCalendarActions(data: WorkoutData): HTMLElement {
+  const actions = el("div", "calendar-actions");
+  const dataLink = el("a", "data-link", "data.json") as HTMLAnchorElement;
+  dataLink.href = "/data.json";
+  dataLink.download = "data.json";
+  actions.append(dataLink, buildThemePicker(data));
+  return actions;
 }
 
 function buildThemePicker(data: WorkoutData): HTMLElement {
@@ -681,13 +690,23 @@ function drawExportMonths(
   y: number,
   columnStep: number,
 ): void {
-  context.fillStyle = "#cbd7cf";
-  context.font = "14px Inter, system-ui, sans-serif";
-  context.textBaseline = "middle";
-
   weeks.forEach((week, index) => {
     const firstOfMonth = week.find((date) => parseDateKey(date).getDate() === 1);
     if (firstOfMonth) {
+      const previousMonthDate = weeks
+        .slice(0, index)
+        .flat()
+        .filter((date) => parseDateKey(date).getDate() === 1)
+        .at(-1);
+      if (!previousMonthDate || firstOfMonth.slice(0, 4) !== previousMonthDate.slice(0, 4)) {
+        context.fillStyle = "rgba(203, 215, 207, 0.56)";
+        context.font = "10px Inter, system-ui, sans-serif";
+        context.textBaseline = "middle";
+        context.fillText(firstOfMonth.slice(0, 4), gridX + index * columnStep, y - 16);
+      }
+      context.fillStyle = "#cbd7cf";
+      context.font = "14px Inter, system-ui, sans-serif";
+      context.textBaseline = "middle";
       context.fillText(shortMonth(firstOfMonth), gridX + index * columnStep, y);
     }
   });
