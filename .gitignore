@@ -6,7 +6,9 @@ public/data.json
 .aws-cloudfront-basic-auth.js
 .aws-cloudfront-distribution-config.json
 .aws-s3-bucket-policy.json
+.aws-iam-*.json
 .strava_tokens.json
 .DS_Store
 __pycache__/
 .pytest_cache/
+TODO.local.md

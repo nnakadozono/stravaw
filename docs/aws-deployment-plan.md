@@ -18,11 +18,18 @@ The deployment should:
 - Frontend: Vanilla TypeScript + Vite.
 - Local data sync: `scripts/strava_sync.py`.
 - Aggregation logic: `scripts/aggregate.py`.
+- AWS Lambda handlers: `scripts/aws_sync_lambda.py`.
 - App data source: `/data.json`, with fallback to `/sample-data.json`.
 - Local generated data: `public/data.json`.
+- Static hosting: private S3 origin behind CloudFront.
+- Owner-only app access: CloudFront Function Basic Auth.
+- Remote sync trigger: Strava webhook subscription to a Lambda Function URL.
+- Manual sync fallback: separate Lambda Function URL protected by `x-refresh-token`.
 - Local secrets:
   - `.env`
   - `.strava_tokens.json`
+  - `.aws-deploy.env`
+  - generated local AWS config/policy files
 - Ignored personal data:
   - `public/data.json`
   - `.strava_tokens.json`
@@ -32,6 +39,8 @@ This is a good foundation because the public app only needs derived workout tota
 ## Target Architecture
 
 ### Phase 1: Static Private Hosting
+
+Status: complete.
 
 ```text
 Browser
@@ -57,6 +66,8 @@ Access control options:
 Avoid public S3 website hosting because the bucket would be easier to expose accidentally.
 
 ### Phase 2: Webhook-Driven Strava Sync
+
+Status: implemented and verified with manual refresh plus simulated webhook POST. Natural Strava event delivery should still be observed with real activity create/update/delete events.
 
 ```text
 Strava Webhook Events API
@@ -103,6 +114,8 @@ The local sync path and AWS sync path should share the Strava fetch and aggregat
 
 ### Phase 3: Manual Fallback Trigger
 
+Status: implemented.
+
 ```text
 iPhone Shortcut or local curl
   |
@@ -134,12 +147,16 @@ If added later, it should call a protected backend endpoint through the same own
 
 ### 1. Prepare AWS Account Safety
 
+Status: complete.
+
 - Enable MFA on the AWS root account.
 - Create an IAM user or role for deployment.
 - Set an AWS Budget alert, for example 1 USD/month.
 - Use one region consistently, preferably close to the owner.
 
 ### 2. Create Static Hosting
+
+Status: complete.
 
 - Create a private S3 bucket for the built site.
 - Block all public access on the bucket.
@@ -150,6 +167,8 @@ If added later, it should call a protected backend endpoint through the same own
 
 ### 3. Deploy the Current App With Local Data
 
+Status: complete.
+
 - Run `npm run sync` locally to generate `public/data.json`.
 - Run `npm run build`.
 - Upload `dist/` to the S3 bucket.
@@ -157,6 +176,8 @@ If added later, it should call a protected backend endpoint through the same own
 - Confirm that `public/data.json` is still not committed to git.
 
 ### 4. Add Deployment Automation
+
+Status: complete.
 
 Add a local deploy command or script that:
 
@@ -167,6 +188,8 @@ Add a local deploy command or script that:
 Keep this local at first. Do not introduce remote sync yet.
 
 ### 5. Refactor Sync Code for Reuse
+
+Status: complete.
 
 Refactor the Python sync code so that the core workflow can be reused:
 
@@ -183,6 +206,8 @@ The AWS entry point should write to S3 and update SSM Parameter Store.
 
 ### 6. Add Lambda Sync Worker
 
+Status: complete.
+
 - Package a Lambda handler using Python.
 - Store Strava credentials and the current refresh token in SSM Parameter Store.
 - Give the Lambda IAM permission to:
@@ -195,6 +220,8 @@ The AWS entry point should write to S3 and update SSM Parameter Store.
 - Confirm that it updates `data.json` in S3.
 
 ### 7. Add Strava Webhook Receiver
+
+Status: implemented. Real webhook delivery from Strava still needs observation during normal Strava activity changes.
 
 - Add an HTTP endpoint using Lambda Function URL.
 - Implement Strava subscription validation:
@@ -213,6 +240,8 @@ The AWS entry point should write to S3 and update SSM Parameter Store.
 - Test create/update/delete event behavior with real activities.
 
 ### 8. Add Manual Fallback Trigger
+
+Status: complete.
 
 - Add a manual refresh endpoint or route.
 - Require a secret request header stored outside the static app.
@@ -307,6 +336,20 @@ Before considering each phase complete:
 - Confirm manual refresh requires the secret header.
 - Confirm no ignored personal files are staged in git.
 
+Completed verification so far:
+
+- `npm run build`
+- `npm run test:py`
+- S3 direct object access returns `403`.
+- CloudFront without Basic Auth returns `401`.
+- CloudFront with Basic Auth returns `200` for the app and `data.json`.
+- Lambda Function URL subscription challenge returns `{"hub.challenge":"..."}`.
+- Manual refresh without `x-refresh-token` returns `401`.
+- Manual refresh with `x-refresh-token` returns `202` and triggers the worker.
+- Worker Lambda fetched Strava activities, regenerated `data.json`, uploaded it to S3, and invalidated `/data.json`.
+- Strava webhook subscription was created.
+- Simulated webhook POST returned `200` and queued worker processing.
+
 ## Open Decisions
 
 - Whether to use CloudFront Function Basic Auth or Cognito for owner-only access.
@@ -322,11 +365,11 @@ Record reusable commands with placeholders in [aws-cli-runbook.md](aws-cli-runbo
 
 ## Suggested Next Step
 
-Start with Phase 1:
+Observe real Strava webhook delivery:
 
-1. create the private S3 bucket;
-2. create the CloudFront distribution;
-3. add Basic Auth;
-4. deploy the existing built app including locally generated `data.json`.
+1. create, update, or delete a low-risk Strava activity;
+2. confirm the webhook receiver Lambda receives the POST;
+3. confirm the sync worker Lambda runs or skips by debounce as expected;
+4. confirm deployed `data.json` updates when a sync runs.
 
-Do not build webhook or manual refresh triggers until static private hosting is working.
+After that, decide whether the optional daily EventBridge sync is useful.

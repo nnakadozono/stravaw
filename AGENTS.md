@@ -19,14 +19,29 @@ The app is intentionally small and personal-use focused:
 - Strava sync: `npm run sync`
 - Generate Strava auth URL: `npm run auth:url`
 - Exchange Strava auth code: `STRAVA_CODE=... npm run auth:exchange`
+- AWS static deploy: `npm run deploy:aws`
+- Render ignored local AWS files: `npm run aws:render-local`
+- Package AWS Lambda zip: `npm run aws:package-lambda`
 
 ## Data And Secrets
 
 - Never commit `.env`.
 - Never commit `.strava_tokens.json`.
+- Never commit `.aws-deploy.env`.
+- Never commit generated local AWS files such as `.aws-cloudfront-basic-auth.js`, `.aws-cloudfront-distribution-config.json`, `.aws-s3-bucket-policy.json`, or `.aws-iam-*.json`.
 - Never commit `public/data.json`; it contains personal derived workout data.
 - Keep `public/sample-data.json` commit-safe and free of real personal data.
 - Published JSON should contain only derived totals, not Strava tokens, activity names, maps, or location data.
+- Store local AWS deployment values in `.aws-deploy.env` and back them up in a password manager or other private secret store.
+
+## AWS Deployment Notes
+
+- Static hosting uses private S3 behind CloudFront.
+- CloudFront owner-only access currently uses a CloudFront Function Basic Auth gate.
+- Remote sync uses Strava webhook events sent to a Lambda Function URL, SQS buffering, and a worker Lambda that regenerates `data.json`.
+- Manual refresh uses a separate Lambda Function URL protected by the `x-refresh-token` header.
+- AWS setup is intentionally CLI-first and run one command at a time, with reusable placeholder commands documented in `docs/aws-cli-runbook.md`.
+- Keep real AWS account IDs, bucket names, distribution IDs, Function URLs, ARNs, webhook subscription IDs, and generated tokens out of committed docs.
 
 ## Implementation Notes
 

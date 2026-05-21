@@ -12,6 +12,7 @@
     "auth:exchange": "python3 scripts/strava_auth.py exchange",
     "sync": "python3 scripts/strava_sync.py",
     "aws:render-local": "python3 scripts/render_aws_local_files.py",
+    "aws:package-lambda": "python3 scripts/package_lambda.py",
     "deploy:aws": "python3 scripts/deploy_static.py",
     "deploy:s3": "python3 scripts/deploy_static.py"
   },

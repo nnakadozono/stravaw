@@ -10,7 +10,10 @@ from typing import Any, Dict, Iterable
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-from aggregate import aggregate_activities
+try:
+    from scripts.aggregate import aggregate_activities
+except ModuleNotFoundError:
+    from aggregate import aggregate_activities
 
 ROOT = Path(__file__).resolve().parents[1]
 ENV_PATH = ROOT / ".env"
@@ -27,17 +30,25 @@ def main() -> int:
     output_path = ROOT / env.get("STRAVA_OUTPUT_PATH", "public/data.json")
     lookback_days = int(env.get("STRAVA_LOOKBACK_DAYS", "400"))
 
-    token = refresh_access_token(client_id, client_secret, refresh_token)
+    data, token, activity_count = sync_strava_data(client_id, client_secret, refresh_token, lookback_days)
     save_tokens(token)
-
-    after = int((datetime.now(timezone.utc) - timedelta(days=lookback_days)).timestamp())
-    activities = list(fetch_activities(token["access_token"], after=after))
-    data = aggregate_activities(activities)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"Wrote {output_path.relative_to(ROOT)} from {len(activities)} Strava activities")
+    print(f"Wrote {output_path.relative_to(ROOT)} from {activity_count} Strava activities")
     return 0
+
+
+def sync_strava_data(
+    client_id: str,
+    client_secret: str,
+    refresh_token: str,
+    lookback_days: int,
+) -> tuple[Dict[str, Any], Dict[str, Any], int]:
+    token = refresh_access_token(client_id, client_secret, refresh_token)
+    after = int((datetime.now(timezone.utc) - timedelta(days=lookback_days)).timestamp())
+    activities = list(fetch_activities(token["access_token"], after=after))
+    return aggregate_activities(activities), token, len(activities)
 
 
 def load_env(path: Path) -> Dict[str, str]:
@@ -127,4 +138,3 @@ def save_tokens(token: Dict[str, Any]) -> None:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

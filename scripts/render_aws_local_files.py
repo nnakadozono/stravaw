@@ -11,6 +11,9 @@ ENV_PATH = ROOT / ".aws-deploy.env"
 BASIC_AUTH_PATH = ROOT / ".aws-cloudfront-basic-auth.js"
 DISTRIBUTION_CONFIG_PATH = ROOT / ".aws-cloudfront-distribution-config.json"
 BUCKET_POLICY_PATH = ROOT / ".aws-s3-bucket-policy.json"
+IAM_TRUST_POLICY_PATH = ROOT / ".aws-iam-lambda-trust.json"
+IAM_TRIGGER_POLICY_PATH = ROOT / ".aws-iam-trigger-policy.json"
+IAM_WORKER_POLICY_PATH = ROOT / ".aws-iam-worker-policy.json"
 
 CACHING_OPTIMIZED_POLICY_ID = "658327ea-f89d-4fab-a63d-7e88639e58f6"
 
@@ -23,8 +26,14 @@ def main() -> int:
         "AWS_DEPLOY_BUCKET",
         "AWS_DEPLOY_PREFIX",
         "AWS_CLOUDFRONT_OAC_ID",
+        "AWS_CLOUDFRONT_BASIC_AUTH_FUNCTION_NAME",
         "AWS_BASIC_AUTH_USERNAME",
         "AWS_BASIC_AUTH_PASSWORD",
+        "AWS_SYNC_QUEUE_ARN",
+        "AWS_STRAVA_OWNER_ID_PARAM",
+        "AWS_STRAVA_VERIFY_TOKEN_PARAM",
+        "AWS_MANUAL_REFRESH_TOKEN_PARAM",
+        "AWS_CLOUDFRONT_DISTRIBUTION_ID",
     ]
     missing = [key for key in required if not env.get(key)]
     if missing:
@@ -34,10 +43,16 @@ def main() -> int:
     write_text(BASIC_AUTH_PATH, render_basic_auth_function(env))
     write_json(DISTRIBUTION_CONFIG_PATH, build_distribution_config(env))
     write_json(BUCKET_POLICY_PATH, build_bucket_policy(env))
+    write_json(IAM_TRUST_POLICY_PATH, build_lambda_trust_policy())
+    write_json(IAM_TRIGGER_POLICY_PATH, build_trigger_policy(env))
+    write_json(IAM_WORKER_POLICY_PATH, build_worker_policy(env))
 
     print(f"Wrote {BASIC_AUTH_PATH.name}")
     print(f"Wrote {DISTRIBUTION_CONFIG_PATH.name}")
     print(f"Wrote {BUCKET_POLICY_PATH.name}")
+    print(f"Wrote {IAM_TRUST_POLICY_PATH.name}")
+    print(f"Wrote {IAM_TRIGGER_POLICY_PATH.name}")
+    print(f"Wrote {IAM_WORKER_POLICY_PATH.name}")
     return 0
 
 
@@ -87,6 +102,7 @@ def build_distribution_config(env: dict[str, str]) -> dict[str, object]:
     region = env["AWS_REGION"]
     prefix = env["AWS_DEPLOY_PREFIX"].strip("/")
     oac_id = env["AWS_CLOUDFRONT_OAC_ID"]
+    function_name = env["AWS_CLOUDFRONT_BASIC_AUTH_FUNCTION_NAME"]
     caller_reference = env.get("AWS_CLOUDFRONT_CALLER_REFERENCE") or "stravaw-20260520-01"
 
     return {
@@ -129,7 +145,7 @@ def build_distribution_config(env: dict[str, str]) -> dict[str, object]:
                 "Quantity": 1,
                 "Items": [
                     {
-                        "FunctionARN": f"arn:aws:cloudfront::{account_id}:function/stravaw-basic-auth",
+                        "FunctionARN": f"arn:aws:cloudfront::{account_id}:function/{function_name}",
                         "EventType": "viewer-request",
                     }
                 ],
@@ -177,6 +193,110 @@ def build_bucket_policy(env: dict[str, str]) -> dict[str, object]:
             }
         ],
     }
+
+
+def build_lambda_trust_policy() -> dict[str, object]:
+    return {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Principal": {"Service": "lambda.amazonaws.com"},
+                "Action": "sts:AssumeRole",
+            }
+        ],
+    }
+
+
+def build_trigger_policy(env: dict[str, str]) -> dict[str, object]:
+    account_id = env["AWS_ACCOUNT_ID"]
+    region = env["AWS_REGION"]
+    queue_arn = env["AWS_SYNC_QUEUE_ARN"]
+    return {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": "logs:CreateLogGroup",
+                "Resource": f"arn:aws:logs:{region}:{account_id}:*",
+            },
+            {
+                "Effect": "Allow",
+                "Action": ["logs:CreateLogStream", "logs:PutLogEvents"],
+                "Resource": f"arn:aws:logs:{region}:{account_id}:log-group:/aws/lambda/*:*",
+            },
+            {
+                "Effect": "Allow",
+                "Action": "sqs:SendMessage",
+                "Resource": queue_arn,
+            },
+            {
+                "Effect": "Allow",
+                "Action": "ssm:GetParameter",
+                "Resource": [
+                    ssm_parameter_arn(env, env["AWS_STRAVA_OWNER_ID_PARAM"]),
+                    ssm_parameter_arn(env, env["AWS_STRAVA_VERIFY_TOKEN_PARAM"]),
+                    ssm_parameter_arn(env, env["AWS_MANUAL_REFRESH_TOKEN_PARAM"]),
+                ],
+            },
+        ],
+    }
+
+
+def build_worker_policy(env: dict[str, str]) -> dict[str, object]:
+    account_id = env["AWS_ACCOUNT_ID"]
+    region = env["AWS_REGION"]
+    bucket = env["AWS_DEPLOY_BUCKET"]
+    prefix = env["AWS_DEPLOY_PREFIX"].strip("/")
+    data_key = f"{prefix}/data.json" if prefix else "data.json"
+    distribution_id = env["AWS_CLOUDFRONT_DISTRIBUTION_ID"]
+    return {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": "logs:CreateLogGroup",
+                "Resource": f"arn:aws:logs:{region}:{account_id}:*",
+            },
+            {
+                "Effect": "Allow",
+                "Action": ["logs:CreateLogStream", "logs:PutLogEvents"],
+                "Resource": f"arn:aws:logs:{region}:{account_id}:log-group:/aws/lambda/*:*",
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "sqs:ReceiveMessage",
+                    "sqs:DeleteMessage",
+                    "sqs:GetQueueAttributes",
+                    "sqs:ChangeMessageVisibility",
+                ],
+                "Resource": env["AWS_SYNC_QUEUE_ARN"],
+            },
+            {
+                "Effect": "Allow",
+                "Action": ["ssm:GetParameter", "ssm:PutParameter"],
+                "Resource": f"arn:aws:ssm:{region}:{account_id}:parameter/stravaw/prod/*",
+            },
+            {
+                "Effect": "Allow",
+                "Action": "s3:PutObject",
+                "Resource": f"arn:aws:s3:::{bucket}/{data_key}",
+            },
+            {
+                "Effect": "Allow",
+                "Action": "cloudfront:CreateInvalidation",
+                "Resource": f"arn:aws:cloudfront::{account_id}:distribution/{distribution_id}",
+            },
+        ],
+    }
+
+
+def ssm_parameter_arn(env: dict[str, str], name: str) -> str:
+    account_id = env["AWS_ACCOUNT_ID"]
+    region = env["AWS_REGION"]
+    path = name.lstrip("/")
+    return f"arn:aws:ssm:{region}:{account_id}:parameter/{path}"
 
 
 def write_text(path: Path, content: str) -> None:
