@@ -248,11 +248,16 @@ Console check:
 ### 10. Deploy the site
 
 ```sh
-npm run sync
+npm run deploy:aws
 ```
 
+`npm run deploy:aws` updates static app files but leaves the hosted `data.json` untouched by default. This avoids overwriting newer S3 data with an older local `public/data.json`.
+
+To intentionally publish local generated workout data:
+
 ```sh
-npm run deploy:aws
+npm run sync
+AWS_DEPLOY_INCLUDE_DATA=1 npm run deploy:aws
 ```
 
 Verify unauthenticated CloudFront access is blocked:

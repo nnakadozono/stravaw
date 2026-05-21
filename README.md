@@ -1,4 +1,4 @@
-# Strava Workout Grass
+# Stravaw - Strava Workout Grass
 
 Personal, iPhone-first workout visualization for Strava activities.
 
@@ -56,17 +56,13 @@ npm run deploy:aws
 ```
 
 This builds the static site, syncs `dist/` to S3, and creates a CloudFront invalidation when `AWS_CLOUDFRONT_DISTRIBUTION_ID` is set.
+By default, it does not upload `data.json`; remote sync may have newer hosted data than your local copy.
 
-Before deploying personal data, run:
+To intentionally deploy local generated data, refresh it first:
 
 ```sh
 npm run sync
-```
-
-The deploy command expects `public/data.json` to exist so the hosted app shows personal derived workout totals. To intentionally deploy with sample data only:
-
-```sh
-AWS_DEPLOY_ALLOW_MISSING_DATA=1 AWS_DEPLOY_S3_URI=s3://your-private-bucket/site npm run deploy:aws
+AWS_DEPLOY_INCLUDE_DATA=1 npm run deploy:aws
 ```
 
 Recommended AWS hosting setup:

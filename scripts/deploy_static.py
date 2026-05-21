@@ -16,13 +16,14 @@ def main() -> int:
     env = load_env(AWS_ENV_PATH)
     s3_uri = env.get("AWS_DEPLOY_S3_URI") or env.get("S3_URI")
     distribution_id = env.get("AWS_CLOUDFRONT_DISTRIBUTION_ID")
+    include_data = env.get("AWS_DEPLOY_INCLUDE_DATA") == "1"
     allow_missing_data = env.get("AWS_DEPLOY_ALLOW_MISSING_DATA") == "1"
 
     if not s3_uri:
         print("Missing AWS_DEPLOY_S3_URI, for example s3://your-private-bucket/site", file=sys.stderr)
         return 2
 
-    if not PUBLIC_DATA_PATH.exists() and not allow_missing_data:
+    if include_data and not PUBLIC_DATA_PATH.exists() and not allow_missing_data:
         print(
             "Missing public/data.json. Run `npm run sync` first, or set "
             "AWS_DEPLOY_ALLOW_MISSING_DATA=1 to deploy with sample data only.",
@@ -31,7 +32,7 @@ def main() -> int:
         return 2
 
     run(["npm", "run", "build"])
-    run(["aws", "s3", "sync", str(DIST_PATH) + "/", s3_uri, "--delete"])
+    run(build_sync_command(s3_uri, include_data))
 
     if distribution_id:
         run(
@@ -54,6 +55,13 @@ def main() -> int:
 def run(command: list[str]) -> None:
     print(f"+ {' '.join(command)}")
     subprocess.run(command, cwd=ROOT, check=True)
+
+
+def build_sync_command(s3_uri: str, include_data: bool) -> list[str]:
+    command = ["aws", "s3", "sync", str(DIST_PATH) + "/", s3_uri, "--delete"]
+    if not include_data:
+        command.extend(["--exclude", "data.json"])
+    return command
 
 
 def load_env(path: Path) -> dict[str, str]:
