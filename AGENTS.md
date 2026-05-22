@@ -60,6 +60,7 @@ The app is intentionally small and personal-use focused:
 - The saved image should use the current theme, show `Stravaw` as the title, include an updated timestamp with the year, use uppercase month and weekday labels, and omit monthly KPI cards.
 - Saved image sharing should prefer Web Share API file sharing when available, with PNG download as the share fallback; the download icon should always use PNG download.
 - Theme switching is implemented via `THEMES` in `src/main.ts`; the default theme is `May`.
+- The initial theme can be selected with the `theme` URL query parameter, matched case-insensitively to a `THEMES` key; selecting the default `May` theme should remove the parameter.
 - When adding themes, keep all sport palettes to four ordered levels and include card background/border colors.
 - `other` should stay gray or neutral across themes.
 

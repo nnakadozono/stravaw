@@ -165,6 +165,7 @@ const SPORT_LABELS: Record<Sport, string> = {
   bike: "Bike",
   other: "Other",
 };
+const DEFAULT_THEME: ThemeName = "May";
 
 const app = document.querySelector<HTMLDivElement>("#app");
 
@@ -173,6 +174,7 @@ if (!app) {
 }
 
 const appRoot = app;
+activeTheme = themeFromUrl();
 
 load().catch((error: unknown) => {
   appRoot.innerHTML = `<div class="shell"><div class="error">Failed to load workout data.</div></div>`;
@@ -377,10 +379,30 @@ function buildThemePicker(data: WorkoutData): HTMLElement {
   }
   select.addEventListener("change", () => {
     activeTheme = select.value as ThemeName;
+    updateThemeUrl(activeTheme);
     render(data);
   });
   wrap.append(select);
   return wrap;
+}
+
+function themeFromUrl(): ThemeName {
+  return parseThemeName(new URLSearchParams(window.location.search).get("theme")) ?? DEFAULT_THEME;
+}
+
+function parseThemeName(value: string | null): ThemeName | null {
+  if (!value) return null;
+  return (Object.keys(THEMES) as ThemeName[]).find((themeName) => themeName.toLowerCase() === value.toLowerCase()) ?? null;
+}
+
+function updateThemeUrl(themeName: ThemeName): void {
+  const url = new URL(window.location.href);
+  if (themeName === DEFAULT_THEME) {
+    url.searchParams.delete("theme");
+  } else {
+    url.searchParams.set("theme", themeName);
+  }
+  window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
 }
 
 function applySportCardTheme(card: HTMLElement, sport: Sport): void {

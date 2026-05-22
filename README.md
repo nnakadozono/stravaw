@@ -32,6 +32,17 @@ npm run dev
 
 The app reads `public/data.json`. If it is missing, it falls back to `public/sample-data.json`.
 
+## Theme links
+
+The default theme is May. To open with another theme selected, add a `theme` query parameter:
+
+```text
+/?theme=Neon
+/?theme=Apple
+/?theme=Cyberpunk
+/?theme=Muted
+```
+
 ## Sync Strava data
 
 ```sh
