@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Stravaw</title>
+  <defs>
+    <clipPath id="cell">
+      <rect width="64" height="64" rx="14" />
+    </clipPath>
+  </defs>
+  <g clip-path="url(#cell)">
+    <polygon points="0,0 32,0 32,32 0,64" fill="#67c15d" />
+    <polygon points="32,0 64,0 64,64 32,32" fill="#56b7e6" />
+    <polygon points="0,64 32,32 64,64" fill="#ea7864" />
+  </g>
+  <text
+    x="32"
+    y="33"
+    fill="#101414"
+    font-family="Inter, ui-sans-serif, system-ui, sans-serif"
+    font-size="30"
+    font-weight="800"
+    dominant-baseline="middle"
+    text-anchor="middle"
+  >W</text>
+</svg>
