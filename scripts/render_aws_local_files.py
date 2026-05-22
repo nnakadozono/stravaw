@@ -78,9 +78,30 @@ def render_basic_auth_function(env: dict[str, str]) -> str:
   var request = event.request;
   var headers = request.headers;
   var expected = "Basic {token}";
+  var cookieName = "stravaw_auth";
+  var cookieValue = "{token}";
+  var maxAge = 60 * 60 * 24 * 30;
+
+  if (hasValidCookie(request.cookies, cookieName, cookieValue)) {{
+    return request;
+  }}
 
   if (headers.authorization && headers.authorization.value === expected) {{
-    return request;
+    return {{
+      statusCode: 302,
+      statusDescription: "Found",
+      headers: {{
+        location: {{
+          value: request.uri + buildQueryString(request.querystring),
+        }},
+      }},
+      cookies: {{
+        stravaw_auth: {{
+          value: cookieValue,
+          attributes: "Max-Age=" + maxAge + "; Path=/; Secure; HttpOnly; SameSite=Lax",
+        }},
+      }},
+    }};
   }}
 
   return {{
@@ -92,6 +113,36 @@ def render_basic_auth_function(env: dict[str, str]) -> str:
       }},
     }},
   }};
+}}
+
+function hasValidCookie(cookies, cookieName, cookieValue) {{
+  if (!cookies || !cookies[cookieName]) {{
+    return false;
+  }}
+
+  return cookies[cookieName].value === cookieValue;
+}}
+
+function buildQueryString(querystring) {{
+  var parts = [];
+  for (var name in querystring) {{
+    if (!Object.prototype.hasOwnProperty.call(querystring, name)) {{
+      continue;
+    }}
+
+    var item = querystring[name];
+    if (item.multiValue) {{
+      for (var index = 0; index < item.multiValue.length; index += 1) {{
+        parts.push(name + "=" + item.multiValue[index].value);
+      }}
+    }} else if (item.value === "") {{
+      parts.push(name);
+    }} else {{
+      parts.push(name + "=" + item.value);
+    }}
+  }}
+
+  return parts.length > 0 ? "?" + parts.join("&") : "";
 }}
 '''
 

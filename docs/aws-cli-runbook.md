@@ -167,6 +167,8 @@ aws cloudfront create-function \
   --function-code fileb://.aws-cloudfront-basic-auth.js
 ```
 
+The generated function uses Basic Auth for the first successful login, then sets a 30 day `stravaw_auth` cookie so normal browser visits do not require repeated username/password entry.
+
 Publish it with the returned ETag:
 
 ```sh
@@ -178,6 +180,34 @@ aws cloudfront publish-function \
 Console check:
 
 - CloudFront Functions shows the configured Basic Auth function as published.
+
+To update the function later, regenerate `.aws-cloudfront-basic-auth.js`, fetch the current ETag, update, then publish:
+
+```sh
+npm run aws:render-local
+FUNCTION_ETAG=$(
+  aws cloudfront describe-function \
+    --name "$AWS_CLOUDFRONT_BASIC_AUTH_FUNCTION_NAME" \
+    --stage DEVELOPMENT \
+    --query ETag \
+    --output text
+)
+aws cloudfront update-function \
+  --name "$AWS_CLOUDFRONT_BASIC_AUTH_FUNCTION_NAME" \
+  --if-match "$FUNCTION_ETAG" \
+  --function-config Comment=basic-auth,Runtime=cloudfront-js-2.0 \
+  --function-code fileb://.aws-cloudfront-basic-auth.js
+FUNCTION_ETAG=$(
+  aws cloudfront describe-function \
+    --name "$AWS_CLOUDFRONT_BASIC_AUTH_FUNCTION_NAME" \
+    --stage DEVELOPMENT \
+    --query ETag \
+    --output text
+)
+aws cloudfront publish-function \
+  --name "$AWS_CLOUDFRONT_BASIC_AUTH_FUNCTION_NAME" \
+  --if-match "$FUNCTION_ETAG"
+```
 
 ### 8. Create the CloudFront distribution
 
