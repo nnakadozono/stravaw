@@ -10,14 +10,4 @@
     <polygon points="32,0 64,0 64,64 32,32" fill="#56b7e6" />
     <polygon points="0,64 32,32 64,64" fill="#ea7864" />
   </g>
-  <text
-    x="32"
-    y="33"
-    fill="#101414"
-    font-family="Inter, ui-sans-serif, system-ui, sans-serif"
-    font-size="30"
-    font-weight="800"
-    dominant-baseline="middle"
-    text-anchor="middle"
-  >W</text>
 </svg>
